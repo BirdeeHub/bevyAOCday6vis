@@ -9,7 +9,7 @@ use crate::types::*;
 
 // Components to represent Room elements visually.
 #[derive(Component)]
-struct Cell;
+struct Space;
 
 fn main() -> Result<()> {
     // Get the Room and trails from your logic
@@ -94,7 +94,7 @@ fn spawn_room(mut commands: Commands, room: Res<Room>,asset_server: Res<AssetSer
                     0.0,
                 )),
                 Visibility::default(),
-                Cell,
+                Space,
             ));
         }
     }
