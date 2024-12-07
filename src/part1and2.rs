@@ -49,9 +49,7 @@ fn check_for_loop(room: &mut Room, trail: &mut Trail, obsx: usize, obsy: usize) 
     let mut checkpoints = Vec::new();
     while continue_moving {
         continue_moving = move_guard(room, trail);
-        //room.print(100);
         if continue_moving && checkpoints.contains(trail.last().unwrap()) {
-            println!("LOOP! {:?} obs: {} {}", trail.last().unwrap(),obsx,obsy);
             return Some((obsx,obsy))
         }
         if continue_moving {
