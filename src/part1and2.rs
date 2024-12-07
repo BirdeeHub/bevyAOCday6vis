@@ -1,10 +1,9 @@
 use std::io::{self};
-use std::env;
 
 use crate::types::*;
 
-pub fn run() -> io::Result<(Room, Trail, Vec<(usize, usize, Trail)>)> {
-    let room = Room::from_file(env::var("AOC_INPUT").expect("AOC_INPUT not set"))?;
+pub fn run(filepath: &str) -> io::Result<(Room, Trail, Vec<(usize, usize, Trail)>)> {
+    let room = Room::from_file(filepath)?;
 
     let mut board = room.clone();
     let boardx = board.len();

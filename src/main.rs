@@ -1,4 +1,5 @@
 use std::io::Result;
+use std::env;
 use bevy::prelude::*;
 mod part1and2;
 mod types;
@@ -11,7 +12,7 @@ struct Cell;
 
 fn main() -> Result<()> {
     // Get the Room and trails from your logic
-    let (room, trail, chktrails) = part1and2::run()?;
+    let (room, trail, chktrails) = part1and2::run(&env::var("AOC_INPUT").expect("AOC_INPUT not set"))?;
 
     // Initialize Bevy App
     App::new()
