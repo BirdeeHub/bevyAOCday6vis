@@ -1,3 +1,4 @@
+use bevy::prelude::*;
 use std::fmt::{Display, Formatter};
 use std::path::Path;
 use std::ops::{Deref, DerefMut};
@@ -38,7 +39,7 @@ impl Display for RoomSpace {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Resource, Clone)]
 pub struct Room(Vec<Vec<RoomSpace>>);
 
 impl Room {
