@@ -33,6 +33,9 @@ fn setup_camera(mut commands: Commands) {
 // Spawn Room cells as entities
 fn spawn_room(mut commands: Commands, room: Res<Room>) {
     let cell_size = 20.0; // Define cell size in pixels
+    let scale_factor = 1.0; // Scaling factor for cell size
+    let offset_x = -500.0; // Offset to move the grid horizontally
+    let offset_y = 500.0; // Offset to move the grid vertically
 
     // Iterate over the Room grid
     for (x, row) in room.iter().enumerate() {
@@ -44,16 +47,17 @@ fn spawn_room(mut commands: Commands, room: Res<Room>) {
                 RoomSpace::Guard(_) => Color::srgb(0.0, 0.0, 1.0), // Blue
             };
 
-            // Spawn a rectangle for each cell
+            // Adjust the size and position
+            let scaled_cell_size = cell_size * scale_factor;
             commands.spawn((
                 Sprite {
                     color,
-                    custom_size: Some(Vec2::new(cell_size, cell_size)),
+                    custom_size: Some(Vec2::new(scaled_cell_size, scaled_cell_size)),
                     ..default()
                 },
                 Transform::from_translation(Vec3::new(
-                    x as f32 * cell_size,
-                    y as f32 * - cell_size,
+                    x as f32 * scaled_cell_size + offset_x,
+                    y as f32 * -scaled_cell_size + offset_y, // Use -scaled_cell_size for inverted Y
                     0.0,
                 )),
                 Visibility::default(),
@@ -62,3 +66,4 @@ fn spawn_room(mut commands: Commands, room: Res<Room>) {
         }
     }
 }
+
