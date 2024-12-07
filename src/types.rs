@@ -1,7 +1,10 @@
 use std::fmt::{Display, Formatter};
+use std::path::Path;
 use std::ops::{Deref, DerefMut};
 use std::time::Duration;
 use std::thread;
+use std::fs::File;
+use std::io::{self, BufRead, BufReader};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Direction {
@@ -43,6 +46,33 @@ impl Room {
     pub fn new() -> Room {
         Room(Vec::new())
     }
+    pub fn from_file<P: AsRef<Path>>(filepath: P) -> io::Result<Room> {
+        let file = File::open(filepath)?;
+        let reader = BufReader::new(file);
+
+        let mut room = Room::new();
+
+        for line in reader.lines() {
+            let line = line?;
+            let mut row:Vec<RoomSpace> = Vec::new();
+            for c in line.chars() {
+                row.push(match c {
+                    '^' => RoomSpace::Guard(Direction::Up),
+                    '#' => RoomSpace::Obstacle,
+                    _ => RoomSpace::Empty,
+                });
+            }
+            room.push(row);
+        }
+        // fix x and y...
+        let mut newroom = Room::new();
+        for i in 0..room[0].len() {
+            let mut newrow = Vec::new();
+            room.iter().for_each(|row|newrow.push(row[i].clone()));
+            newroom.push(newrow);
+        };
+        Ok(newroom)
+    }
     pub fn apply_trail(&self, trail: &Trail) -> Room {
         let mut newroom = self.clone();
         let mut newtrail: Trail = trail.clone();
@@ -50,9 +80,28 @@ impl Room {
             for (_,(x,y)) in newtrail.iter() {
                 newroom[*x][*y] = RoomSpace::Visited;
             };
-            newroom[*gx][*gy] = RoomSpace::Guard(dir.clone());
+            newroom.add_guard(*gx,*gy, dir);
         };
         newroom
+    }
+    pub fn add_obstacle(&mut self, x:usize, y:usize) {
+        self[x][y] = RoomSpace::Obstacle;
+    }
+    pub fn add_guard(&mut self, x:usize, y:usize, d:&Direction) {
+        self[x][y] = RoomSpace::Guard(d.clone());
+    }
+    pub fn find_guard(&self) -> Option<(Direction,(usize,usize))> {
+        for (i, _) in self.iter().enumerate() {
+            for (j, item) in self[i].iter().enumerate() {
+                match item {
+                    RoomSpace::Guard(dir) => {
+                        return Some((dir.clone(),(i,j)));
+                    },
+                    _ => continue,
+                }
+            }
+        }
+        None
     }
     #[allow(dead_code)]
     pub fn print(&self, delay:u64) {
