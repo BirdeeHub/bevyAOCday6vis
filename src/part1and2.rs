@@ -6,8 +6,7 @@ use crate::types::*;
 
 pub fn run() -> io::Result<(Room, Trail, Vec<(usize, usize, Trail)>)> {
     let start = Instant::now();
-    let inputvar = env::var("AOC_INPUT").expect("AOC_INPUT not set");
-    let room = Room::from_file(inputvar)?;
+    let room = Room::from_file(env::var("AOC_INPUT").expect("AOC_INPUT not set"))?;
 
     let mut board = room.clone();
     let boardx = board.len();
