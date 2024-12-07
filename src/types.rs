@@ -41,7 +41,6 @@ impl Display for RoomSpace {
 #[derive(Debug, PartialEq, Clone)]
 pub struct Room(Vec<Vec<RoomSpace>>);
 
-
 impl Room {
     pub fn new() -> Room {
         Room(Vec::new())
