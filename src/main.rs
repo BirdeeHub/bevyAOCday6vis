@@ -13,12 +13,11 @@ struct Cell;
 fn main() -> Result<()> {
     // Get the Room and trails from your logic
     let (room, trail, chktrails) = part1and2::run(&env::var("AOC_INPUT").expect("AOC_INPUT not set"))?;
-    let displayroom = room.clone();
 
     // Initialize Bevy App
     App::new()
         .add_plugins(DefaultPlugins) // Default plugins for window and rendering
-        .insert_resource(displayroom) // Insert Room as a resource to access in systems
+        .insert_resource(room.clone()) // Insert Room as a resource to access in systems
         .add_systems(Startup,setup_camera) // Set up camera
         .add_systems(Startup,spawn_room) // Spawn Room entities
         .run();
