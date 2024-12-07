@@ -67,7 +67,10 @@ fn spawn_room(mut commands: Commands, room: Res<Room>,asset_server: Res<AssetSer
                 //    custom_size: Some(Vec2::new(scaled_cell_size, scaled_cell_size)),
                 //    ..default()
                 //},
-                RoomSpace::Guard(_) => Sprite::from_image(asset_server.load("Down1.png")),
+                RoomSpace::Guard(Direction::Up) => Sprite::from_image(asset_server.load("Up1.png")),
+                RoomSpace::Guard(Direction::Left) => Sprite::from_image(asset_server.load("Left1.png")),
+                RoomSpace::Guard(Direction::Right) => Sprite::from_image(asset_server.load("Right1.png")),
+                RoomSpace::Guard(Direction::Down) => Sprite::from_image(asset_server.load("Down1.png")),
             };
             commands.spawn((
                 sprite,
