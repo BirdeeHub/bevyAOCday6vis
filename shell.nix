@@ -22,7 +22,6 @@
       lld
       clang
       pkg-config
-      lutris
       xorg.libX11
       xorg.libXcursor
       xorg.libXrandr
