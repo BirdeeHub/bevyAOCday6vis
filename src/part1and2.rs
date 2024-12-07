@@ -21,7 +21,7 @@ pub fn run(filepath: &str) -> io::Result<(Room, Trail, Vec<(usize, usize, Trail)
     let trlclone = trail.clone();
     let tocheck = deduplicate_vec(trlclone.iter().map(|(_,pos)|pos).collect());
     for (i,(x,y)) in tocheck.iter().enumerate().skip(1) {
-        println!("{} / {}",i+1,trail.len());
+        println!("{} / {}",i,trail.len()-1);
         let mut chktrl = Trail::new();
         if let Some(obs) = check_for_loop(&mut room.clone(), &mut chktrl, *x,*y) {
             obstacles.push(obs);
