@@ -1,6 +1,7 @@
 use std::io::Result;
 use std::env;
 use bevy::prelude::*;
+use bevy::asset::*;
 mod part1and2;
 mod types;
 
@@ -18,12 +19,25 @@ fn main() -> Result<()> {
     testroom.apply_trail(&trail, true);
 
     // Initialize Bevy App
-    App::new()
-        .add_plugins(DefaultPlugins) // Default plugins for window and rendering
+    let mut app = App::new();
+    app.add_plugins(DefaultPlugins) // Default plugins for window and rendering
         .insert_resource(testroom) // Insert Room as a resource to access in systems
         .add_systems(Startup,setup_camera) // Set up camera
-        .add_systems(Startup,spawn_room) // Spawn Room entities
-        .run();
+        .add_systems(Startup,spawn_room); // Spawn Room entities
+    embedded_asset!(app, "sprites/Up1.png");
+    embedded_asset!(app, "sprites/Up2.png");
+    embedded_asset!(app, "sprites/Up3.png");
+    embedded_asset!(app, "sprites/Right1.png");
+    embedded_asset!(app, "sprites/Right2.png");
+    embedded_asset!(app, "sprites/Right3.png");
+    embedded_asset!(app, "sprites/Down1.png");
+    embedded_asset!(app, "sprites/Down2.png");
+    embedded_asset!(app, "sprites/Down3.png");
+    embedded_asset!(app, "sprites/Left1.png");
+    embedded_asset!(app, "sprites/Left2.png");
+    embedded_asset!(app, "sprites/Left3.png");
+
+    app.run();
 
     Ok(())
 }
@@ -67,10 +81,10 @@ fn spawn_room(mut commands: Commands, room: Res<Room>,asset_server: Res<AssetSer
                 //    custom_size: Some(Vec2::new(scaled_cell_size, scaled_cell_size)),
                 //    ..default()
                 //},
-                RoomSpace::Guard(Direction::Up) => Sprite::from_image(asset_server.load("Up1.png")),
-                RoomSpace::Guard(Direction::Left) => Sprite::from_image(asset_server.load("Left1.png")),
-                RoomSpace::Guard(Direction::Right) => Sprite::from_image(asset_server.load("Right1.png")),
-                RoomSpace::Guard(Direction::Down) => Sprite::from_image(asset_server.load("Down1.png")),
+                RoomSpace::Guard(Direction::Up) => Sprite::from_image(asset_server.load("embedded://day6vis/sprites/Up1.png")),
+                RoomSpace::Guard(Direction::Left) => Sprite::from_image(asset_server.load("embedded://day6vis/sprites/Left1.png")),
+                RoomSpace::Guard(Direction::Right) => Sprite::from_image(asset_server.load("embedded://day6vis/sprites/Right1.png")),
+                RoomSpace::Guard(Direction::Down) => Sprite::from_image(asset_server.load("embedded://day6vis/sprites/Down1.png")),
             };
             commands.spawn((
                 sprite,
