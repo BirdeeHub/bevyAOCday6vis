@@ -15,7 +15,7 @@ fn deduplicate_vec<T: Eq + std::hash::Hash>(vec: Vec<T>) -> Vec<T> {
     result
 }
 
-pub fn run() -> io::Result<()> {
+pub fn run() -> io::Result<(Room, Trail, Vec<(usize, usize, Trail)>)> {
     let start = Instant::now();
     let inputvar = env::var("AOC_INPUT").expect("AOC_INPUT not set");
     let file = File::open(inputvar)?;
@@ -45,23 +45,28 @@ pub fn run() -> io::Result<()> {
     room = newroom;
 
     let mut board = room.clone();
+    let boardx = board.len();
+    let boardy = board[0].len();
     let mut trail = Trail::new();
-    let mut continue_moving = true;
-    while continue_moving {
-        continue_moving = move_guard(&mut board, &mut trail);
-        //board.print(250);
-    }
+    if check_for_loop(&mut board, &mut trail, boardx, boardy).is_some() {
+        return Err(io::Error::new(io::ErrorKind::InvalidData, "Board has loop in initial state!"));
+    };
     
     let visited = board.iter().flat_map(|row| row.iter()).filter(|&cell| cell == &RoomSpace::Visited).count();
 
+    let mut chktrails = Vec::new();
+
     let mut obstacles = Vec::new();
-    let tocheck = deduplicate_vec(trail.iter().map(|(_,pos)|pos).collect());
+    let trlclone = trail.clone();
+    let tocheck = deduplicate_vec(trlclone.iter().map(|(_,pos)|pos).collect());
     for (i,(x,y)) in tocheck.iter().enumerate() {
         println!("{} / {}",i+1,trail.len());
         if i == 0 { continue; }
-        if let Some(obs) = check_for_loop(&mut room.clone(), *x,*y) {
+        let mut chktrl = Trail::new();
+        if let Some(obs) = check_for_loop(&mut room.clone(), &mut chktrl, *x,*y) {
             obstacles.push(obs);
         }
+        chktrails.push((*x, *y, chktrl))
     }
     obstacles = deduplicate_vec(obstacles);
 
@@ -71,7 +76,7 @@ pub fn run() -> io::Result<()> {
     
     println!("Time taken: {:?}", start.elapsed());
 
-    Ok(())
+    Ok((room,trail,chktrails))
 }
 
 fn get_newspace(room: &Room, pos: (usize,usize), direction: &Direction) -> Option<(usize, usize)> {
@@ -112,23 +117,24 @@ fn turn_right(direction: &Direction) -> Direction {
     }
 }
 
-fn check_for_loop(room: &mut Room, obsx: usize, obsy: usize) -> Option<(usize,usize)> {
-    if room[obsx][obsy] == RoomSpace::Obstacle {
-        return None;
+fn check_for_loop(room: &mut Room, trail: &mut Trail, obsx: usize, obsy: usize) -> Option<(usize,usize)> {
+    if obsx < room.len() && obsy < room[0].len() {
+        if room[obsx][obsy] == RoomSpace::Obstacle {
+            return None;
+        }
+        room[obsx][obsy] = RoomSpace::Obstacle;
     }
-    room[obsx][obsy] = RoomSpace::Obstacle;
     let mut continue_moving = true;
     let mut checkpoints = Vec::new();
-    let mut checktrail = Trail::new();
     while continue_moving {
-        continue_moving = move_guard(room, &mut checktrail);
+        continue_moving = move_guard(room, trail);
         //room.print(100);
-        if continue_moving && checkpoints.contains(checktrail.last().unwrap()) {
-            println!("LOOP! {:?} obs: {} {}", checktrail.last().unwrap(),obsx,obsy);
+        if continue_moving && checkpoints.contains(trail.last().unwrap()) {
+            println!("LOOP! {:?} obs: {} {}", trail.last().unwrap(),obsx,obsy);
             return Some((obsx,obsy))
         }
         if continue_moving {
-            checkpoints.push(checktrail.last().unwrap().clone());
+            checkpoints.push(trail.last().unwrap().clone());
         }
     }
     None
