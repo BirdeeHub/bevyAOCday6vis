@@ -1,11 +1,9 @@
 use std::io::{self};
-use std::time::Instant;
 use std::env;
 
 use crate::types::*;
 
 pub fn run() -> io::Result<(Room, Trail, Vec<(usize, usize, Trail)>)> {
-    let start = Instant::now();
     let room = Room::from_file(env::var("AOC_INPUT").expect("AOC_INPUT not set"))?;
 
     let mut board = room.clone();
@@ -37,8 +35,6 @@ pub fn run() -> io::Result<(Room, Trail, Vec<(usize, usize, Trail)>)> {
     println!("Part 1: total visited: {}", visited);
 
     println!("Part 2: possible obstacle locations for loop: {:?}",obstacles.len());
-    
-    println!("Time taken: {:?}", start.elapsed());
 
     Ok((room,trail,chktrails))
 }
