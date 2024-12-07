@@ -85,4 +85,3 @@ fn spawn_room(mut commands: Commands, room: Res<Room>,asset_server: Res<AssetSer
         }
     }
 }
-
