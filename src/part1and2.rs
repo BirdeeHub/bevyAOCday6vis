@@ -61,7 +61,7 @@ fn check_for_loop(room: &mut Room, trail: &mut Trail, obsx: usize, obsy: usize) 
 
 fn move_guard(room: &mut Room, trail: &mut Trail) -> bool {
     if let Some((direction,guard_pos)) = room.find_guard() {
-        room[guard_pos.0][guard_pos.1] = RoomSpace::Visited;
+        room.visit_space(guard_pos.0,guard_pos.1);
         trail.push((direction.clone(),guard_pos));
         if let Some((dir,newspace)) = get_newspace_with_obstacle(room, guard_pos, &direction) {
             if dir == direction {

@@ -73,14 +73,18 @@ impl Room {
         };
         Ok(newroom)
     }
-    pub fn apply_trail(&self, trail: &Trail) -> Room {
+    pub fn apply_trail(&self, trail: &Trail, with_guard: bool) -> Room {
         let mut newroom = self.clone();
         let mut newtrail: Trail = trail.clone();
         if let Some((dir,(gx,gy))) = &newtrail.pop() {
             for (_,(x,y)) in newtrail.iter() {
-                newroom[*x][*y] = RoomSpace::Visited;
+                newroom.visit_space(*x,*y);
             };
-            newroom.add_guard(*gx,*gy, dir);
+            if with_guard {
+                newroom.add_guard(*gx,*gy, dir);
+            } else {
+                newroom.visit_space(*gx,*gy);
+            };
         };
         newroom
     }
@@ -89,6 +93,9 @@ impl Room {
     }
     pub fn add_guard(&mut self, x:usize, y:usize, d:&Direction) {
         self[x][y] = RoomSpace::Guard(d.clone());
+    }
+    pub fn visit_space(&mut self, x:usize, y:usize) {
+        self[x][y] = RoomSpace::Visited;
     }
     pub fn find_guard(&self) -> Option<(Direction,(usize,usize))> {
         for (i, _) in self.iter().enumerate() {
