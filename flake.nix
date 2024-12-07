@@ -23,7 +23,7 @@
     overlays.default = appOverlay;
   } // (
     forEachSystem (system: let
-      pkgs = import nixpkgs { inherit system; overlays = [ appOverlay ]; };
+      pkgs = import nixpkgs { inherit system; overlays = [ appOverlay ]; config.allowUnfree = true; };
     in{
       packages = {
         default = pkgs.${APPNAME};

@@ -1,24 +1,43 @@
 { shellPkg
 , pkg-config
-, alsa-lib
-, libudev-zero
 , APPNAME
 , mkShell
+, pkgs
+, lib
 , ...
 }: let
 # dev shells should not contain the final program.
 # They should have the environment
 # needed to BUILD (and run) the final program.
-  DEVSHELL = mkShell {
+  DEVSHELL = mkShell (rec {
     packages = [];
     inputsFrom = [];
     DEVSHELL = 0;
-    APPNAME = APPNAME;
+    inherit APPNAME;
     nativeBuildInputs = [ pkg-config ];
-    buildInputs = [ alsa-lib libudev-zero ];
+    buildInputs = with pkgs; [
+      alsa-lib
+      udev
+      vulkan-loader
+      lld
+      clang
+      pkg-config
+      lutris
+      xorg.libX11
+      xorg.libXcursor
+      xorg.libXrandr
+      xorg.libXi
+      xorg.libxkbfile
+      libxkbcommon
+      vulkan-tools
+      vulkan-headers
+      vulkan-loader
+      vulkan-validation-layers
+    ];
     shellHook = ''
+      export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:${lib.makeLibraryPath (with pkgs; [ alsa-lib udev vulkan-loader libxkbcommon])}"
       exec ${shellPkg}
     '';
-  };
+  });
 in
 DEVSHELL

@@ -49,7 +49,7 @@ pub fn run() -> io::Result<()> {
     let mut continue_moving = true;
     while continue_moving {
         continue_moving = move_guard(&mut board, &mut trail);
-        board.print(250);
+        //board.print(250);
     }
     
     let visited = board.iter().flat_map(|row| row.iter()).filter(|&cell| cell == &RoomSpace::Visited).count();
@@ -122,7 +122,7 @@ fn check_for_loop(room: &mut Room, obsx: usize, obsy: usize) -> Option<(usize,us
     let mut checktrail = Trail::new();
     while continue_moving {
         continue_moving = move_guard(room, &mut checktrail);
-        room.print(100);
+        //room.print(100);
         if continue_moving && checkpoints.contains(checktrail.last().unwrap()) {
             println!("LOOP! {:?} obs: {} {}", checktrail.last().unwrap(),obsx,obsy);
             return Some((obsx,obsy))

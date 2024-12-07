@@ -5,6 +5,8 @@
 , pkg-config
 , alsa-lib
 , libudev-zero
+, libX11
+, libxcb
 , ...
 }: let
 APPDRV = rustPlatform.buildRustPackage {
@@ -12,7 +14,7 @@ APPDRV = rustPlatform.buildRustPackage {
   version = "0.0.0";
   src = src;
   nativeBuildInputs = [ pkg-config ];
-  buildInputs = [ alsa-lib libudev-zero ];
+  buildInputs = [ libX11 libxcb alsa-lib libudev-zero ];
 
   cargoLock = {
     lockFileContents = builtins.readFile "${src}/Cargo.lock";
