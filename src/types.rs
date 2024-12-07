@@ -73,20 +73,18 @@ impl Room {
         };
         Ok(newroom)
     }
-    pub fn apply_trail(&self, trail: &Trail, with_guard: bool) -> Room {
-        let mut newroom = self.clone();
+    pub fn apply_trail(&mut self, trail: &Trail, with_guard: bool) {
         let mut newtrail: Trail = trail.clone();
         if let Some((dir,(gx,gy))) = &newtrail.pop() {
             for (_,(x,y)) in newtrail.iter() {
-                newroom.visit_space(*x,*y);
+                self.visit_space(*x,*y);
             };
             if with_guard {
-                newroom.add_guard(*gx,*gy, dir);
+                self.add_guard(*gx,*gy, dir);
             } else {
-                newroom.visit_space(*gx,*gy);
+                self.visit_space(*gx,*gy);
             };
         };
-        newroom
     }
     pub fn add_obstacle(&mut self, x:usize, y:usize) {
         self[x][y] = RoomSpace::Obstacle;
