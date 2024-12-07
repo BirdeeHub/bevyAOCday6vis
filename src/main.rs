@@ -52,7 +52,7 @@ fn spawn_room(mut commands: Commands, room: Res<Room>) {
                 },
                 Transform::from_translation(Vec3::new(
                     x as f32 * cell_size,
-                    y as f32 * cell_size,
+                    y as f32 * - cell_size,
                     0.0,
                 )),
                 Visibility::default(),
