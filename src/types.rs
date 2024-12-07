@@ -43,6 +43,17 @@ impl Room {
     pub fn new() -> Room {
         Room(Vec::new())
     }
+    pub fn apply_trail(&self, trail: &Trail) -> Room {
+        let mut newroom = self.clone();
+        let mut newtrail: Trail = trail.clone();
+        if let Some((dir,(gx,gy))) = &newtrail.pop() {
+            for (_,(x,y)) in newtrail.iter() {
+                newroom[*x][*y] = RoomSpace::Visited;
+            };
+            newroom[*gx][*gy] = RoomSpace::Guard(dir.clone());
+        };
+        newroom
+    }
     #[allow(dead_code)]
     pub fn print(&self, delay:u64) {
         thread::sleep(Duration::from_millis(delay));
@@ -89,6 +100,7 @@ impl Display for Room {
     }
 }
 
+#[derive(Debug, PartialEq, Clone)]
 pub struct Trail(Vec<(Direction,(usize,usize))>);
 
 impl Trail {
