@@ -74,9 +74,9 @@ impl Room {
         Ok(newroom)
     }
     pub fn apply_trail(&mut self, trail: &Trail, with_guard: bool) {
-        let mut newtrail: Trail = trail.clone();
-        if let Some((dir,(gx,gy))) = &newtrail.pop() {
-            for (_,(x,y)) in newtrail.iter() {
+        let mut trail: Trail = trail.clone();
+        if let Some((dir,(gx,gy))) = &trail.pop() {
+            for (_,(x,y)) in trail.iter() {
                 self.visit_space(*x,*y);
             };
             if with_guard {
