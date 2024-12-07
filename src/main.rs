@@ -11,7 +11,7 @@ struct Cell;
 
 fn main() -> Result<()> {
     // Get the Room and trails from your logic
-    let (room, _trail, _chktrails) = part1and2::run()?;
+    let (room, trail, chktrails) = part1and2::run()?;
 
     // Initialize Bevy App
     App::new()
@@ -61,4 +61,3 @@ fn spawn_room(mut commands: Commands, room: Res<Room>) {
         }
     }
 }
-
