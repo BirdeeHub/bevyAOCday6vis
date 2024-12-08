@@ -40,17 +40,20 @@ impl Display for RoomSpace {
 }
 
 #[derive(Debug, PartialEq, Resource, Clone)]
-pub struct Room(Vec<Vec<RoomSpace>>);
+pub struct Room {
+    name: String,
+    grid: Vec<Vec<RoomSpace>>,
+}
 
 impl Room {
-    pub fn new() -> Room {
-        Room(Vec::new())
+    pub fn new(name: String) -> Room {
+        Room{name, grid: Vec::new()}
     }
-    pub fn from_file<P: AsRef<Path>>(filepath: P) -> io::Result<Room> {
+    pub fn from_file<P: AsRef<Path>>(filepath: P, name: String) -> io::Result<Room> {
         let file = File::open(filepath)?;
         let reader = BufReader::new(file);
 
-        let mut room = Room::new();
+        let mut rawout:Vec<Vec<RoomSpace>> = Vec::new();
 
         for line in reader.lines() {
             let line = line?;
@@ -62,13 +65,13 @@ impl Room {
                     _ => RoomSpace::Empty,
                 });
             }
-            room.push(row);
+            rawout.push(row);
         }
         // fix x and y...
-        let mut newroom = Room::new();
-        for i in 0..room[0].len() {
+        let mut newroom = Room::new(name);
+        for i in 0..rawout[0].len() {
             let mut newrow = Vec::new();
-            room.iter().for_each(|row|newrow.push(row[i].clone()));
+            rawout.iter().for_each(|row|newrow.push(row[i].clone()));
             newroom.push(newrow);
         };
         Ok(newroom)
@@ -119,13 +122,13 @@ impl Deref for Room {
     type Target = Vec<Vec<RoomSpace>>;
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.grid
     }
 }
 
 impl DerefMut for Room {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
+        &mut self.grid
     }
 }
 
@@ -172,6 +175,29 @@ impl Deref for Trail {
 }
 
 impl DerefMut for Trail {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Resource)]
+pub struct CheckTrails(Vec<(usize,usize, Trail)>);
+
+impl CheckTrails {
+    pub fn new() -> CheckTrails {
+        CheckTrails(Vec::new())
+    }
+}
+
+impl Deref for CheckTrails {
+    type Target = Vec<(usize,usize, Trail)>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for CheckTrails {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
