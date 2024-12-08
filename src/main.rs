@@ -80,8 +80,6 @@ fn move_system(mut commands: Commands,
         // Adjust the size and position
         let scaled_cell_size = cell_size * scale_factor;
 
-        println!("Room trail: {:#?}", room.trail);
-
         room.advance();
 
         // Iterate over the Room grid
