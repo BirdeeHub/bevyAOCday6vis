@@ -102,23 +102,30 @@ impl Room {
             self.add_guard(x,y,&dir);
         }
     }
-    pub fn retreat(&mut self) {
+    pub fn retreat(&mut self) -> Option<(Direction,(usize,usize))> {
         if self.trail.get(self.trail_idx).is_some() && self.trail_idx > 0 {
             let pos = self.trail[self.trail_idx].clone();
             self[pos.1.0][pos.1.1] = RoomSpace::Empty;
             self.trail_idx -= 1;
-            self.add_guard(pos.1.0,pos.1.1,&pos.0)
-        }
+            let pos = self.trail[self.trail_idx].clone();
+            self.add_guard(pos.1.0,pos.1.1,&pos.0);
+            Some(pos)
+        } else { None }
     }
-    pub fn advance(&mut self) {
+    pub fn advance(&mut self) -> Option<(Direction,(usize,usize))> {
         if self.trail.get(self.trail_idx).is_some() {
             let pos = self.trail[self.trail_idx].clone();
             self.trail_idx += 1;
             if self.trail.get(self.trail_idx).is_some() {
                 self.visit_space(pos.1.0,pos.1.1);
                 let (dir,(x,y)) = self.trail[self.trail_idx].clone();
-                self.add_guard(x,y,&dir)
+                self.add_guard(x,y,&dir);
+                Some((dir,(x,y)))
+            } else {
+                Some(pos)
             }
+        } else {
+            None
         }
     }
     pub fn add_obstacle(&mut self, x:usize, y:usize) {
