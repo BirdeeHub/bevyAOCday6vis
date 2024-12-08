@@ -32,7 +32,8 @@ fn main() -> Result<()> {
         .insert_resource(testroom) // Insert Room as a resource to access in systems
         .insert_resource(MoveTimer(Timer::from_seconds(0.25, TimerMode::Repeating))) // Add the timer resource
         .add_systems(Startup,setup_camera) // Set up camera
-        .add_systems(Startup,spawn_room); // Spawn Room entities
+        .add_systems(Update,spawn_room) // Spawn Room entities
+        .add_systems(Update,move_system); // Spawn Room entities
     embedded_asset!(app, "sprites/Up1.png");
     embedded_asset!(app, "sprites/Up2.png");
     embedded_asset!(app, "sprites/Up3.png");
