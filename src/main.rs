@@ -13,8 +13,12 @@ struct Space;
 
 fn main() -> Result<()> {
     // Get the Room and trails from your logic
-    let (room, trail, chktrails) = part1and2::run(&env::var("AOC_INPUT").expect("AOC_INPUT not set"))?;
-
+    let args: Vec<String> = std::env::args().collect();
+    let filepath = match args.get(1) {
+        Some(filepath_arg) => filepath_arg.to_string(),
+        _ => env::var("AOC_INPUT").expect("AOC_INPUT not set")
+    };
+    let (room, trail, chktrails) = part1and2::run(&filepath)?;
     let mut testroom = room.clone();
     testroom.apply_trail(&trail, true);
 
