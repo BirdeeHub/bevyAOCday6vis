@@ -15,6 +15,24 @@ struct Space;
 #[derive(Resource)]
 struct MoveTimer(Timer);
 
+struct EmbeddedPlug;
+impl Plugin for EmbeddedPlug {
+    fn build(&self, app: &mut App) {
+        embedded_asset!(app, "sprites/Up1.png");
+        embedded_asset!(app, "sprites/Up2.png");
+        embedded_asset!(app, "sprites/Up3.png");
+        embedded_asset!(app, "sprites/Right1.png");
+        embedded_asset!(app, "sprites/Right2.png");
+        embedded_asset!(app, "sprites/Right3.png");
+        embedded_asset!(app, "sprites/Down1.png");
+        embedded_asset!(app, "sprites/Down2.png");
+        embedded_asset!(app, "sprites/Down3.png");
+        embedded_asset!(app, "sprites/Left1.png");
+        embedded_asset!(app, "sprites/Left2.png");
+        embedded_asset!(app, "sprites/Left3.png");
+    }
+}
+
 fn main() -> Result<()> {
     // Get the Room and trails from your logic
     let args: Vec<String> = std::env::args().collect();
@@ -31,24 +49,12 @@ fn main() -> Result<()> {
     app.add_plugins(DefaultPlugins) // Default plugins for window and rendering
         .insert_resource(testroom) // Insert Room as a resource to access in systems
         .insert_resource(trail) // Insert Room as a resource to access in systems
+        .add_plugins(EmbeddedPlug)
         .insert_resource(MoveTimer(Timer::from_seconds(0.25, TimerMode::Repeating))) // Add the timer resource
         .add_systems(Startup,setup_camera) // Set up camera
         .add_systems(Update,spawn_room) // Spawn Room entities
-        .add_systems(Update,move_system); // Spawn Room entities
-    embedded_asset!(app, "sprites/Up1.png");
-    embedded_asset!(app, "sprites/Up2.png");
-    embedded_asset!(app, "sprites/Up3.png");
-    embedded_asset!(app, "sprites/Right1.png");
-    embedded_asset!(app, "sprites/Right2.png");
-    embedded_asset!(app, "sprites/Right3.png");
-    embedded_asset!(app, "sprites/Down1.png");
-    embedded_asset!(app, "sprites/Down2.png");
-    embedded_asset!(app, "sprites/Down3.png");
-    embedded_asset!(app, "sprites/Left1.png");
-    embedded_asset!(app, "sprites/Left2.png");
-    embedded_asset!(app, "sprites/Left3.png");
-
-    app.run();
+        .add_systems(Update,move_system)
+        .run(); // Spawn Room entities
 
     Ok(())
 }
