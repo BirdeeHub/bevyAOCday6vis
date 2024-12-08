@@ -47,9 +47,9 @@ fn main() -> Result<()> {
     // Initialize Bevy App
     let mut app = App::new();
     app.add_plugins(DefaultPlugins) // Default plugins for window and rendering
+        .add_plugins(EmbeddedPlug)
         .insert_resource(testroom) // Insert Room as a resource to access in systems
         .insert_resource(trail) // Insert Room as a resource to access in systems
-        .add_plugins(EmbeddedPlug)
         .insert_resource(MoveTimer(Timer::from_seconds(0.25, TimerMode::Repeating))) // Add the timer resource
         .add_systems(Startup,setup_camera) // Set up camera
         .add_systems(Update,spawn_room) // Spawn Room entities
