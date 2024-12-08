@@ -2,6 +2,7 @@ use std::io::Result;
 use std::env;
 use bevy::prelude::*;
 use bevy::asset::*;
+use bevy::time::*;
 mod part1and2;
 mod types;
 
@@ -10,6 +11,9 @@ use crate::types::*;
 // Components to represent Room elements visually.
 #[derive(Component)]
 struct Space;
+
+#[derive(Resource)]
+struct MoveTimer(Timer);
 
 fn main() -> Result<()> {
     // Get the Room and trails from your logic
@@ -26,6 +30,7 @@ fn main() -> Result<()> {
     let mut app = App::new();
     app.add_plugins(DefaultPlugins) // Default plugins for window and rendering
         .insert_resource(testroom) // Insert Room as a resource to access in systems
+        .insert_resource(MoveTimer(Timer::from_seconds(0.25, TimerMode::Repeating))) // Add the timer resource
         .add_systems(Startup,setup_camera) // Set up camera
         .add_systems(Startup,spawn_room); // Spawn Room entities
     embedded_asset!(app, "sprites/Up1.png");
@@ -49,6 +54,18 @@ fn main() -> Result<()> {
 // Set up a 2D camera
 fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2d);
+}
+
+// Update system that runs once every 250ms
+fn move_system(
+    time: Res<Time>,
+    mut timer: ResMut<MoveTimer>,
+    mut room: ResMut<Room>, // Access to the room to modify it
+) {
+    // Tick the timer
+    if timer.0.tick(time.delta()).just_finished() {
+        println!("Update triggered at {:?}", time.elapsed_secs());
+    }
 }
 
 // Spawn Room cells as entities
