@@ -154,7 +154,7 @@ impl Display for Room {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Resource)]
 pub struct Trail(Vec<(Direction,(usize,usize))>);
 
 impl Trail {
