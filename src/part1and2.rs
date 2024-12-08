@@ -26,6 +26,7 @@ pub fn run(filepath: &str) -> io::Result<(Room, CheckRooms)> {
             obstacles.push(obs);
             newroom.add_obstacle(obs.0,obs.1);
         }
+        newroom.reset();
         chktrails.push(newroom);
     }
     obstacles = deduplicate_vec(obstacles);
@@ -34,6 +35,7 @@ pub fn run(filepath: &str) -> io::Result<(Room, CheckRooms)> {
 
     println!("Part 2: possible obstacle locations for loop: {:?}",obstacles.len());
 
+    board.reset();
     Ok((board,chktrails))
 }
 

@@ -82,6 +82,26 @@ impl Room {
         };
         Ok(newroom)
     }
+    pub fn reset(&mut self) {
+        // Reset the trail index
+        self.trail_idx = 0;
+
+        // Iterate through the grid and reset RoomSpace values
+        for row in &mut self.grid {
+            for cell in row {
+                *cell = match cell {
+                    RoomSpace::Visited => RoomSpace::Empty, // Clear visited spaces
+                    RoomSpace::Guard(_) => RoomSpace::Empty, // Clear guards
+                    _ => cell.clone(), // Leave other spaces unchanged
+                };
+            }
+        }
+
+        if self.trail.first().is_some() {
+            let (dir,(x,y)) = self.trail[0].clone();
+            self.add_guard(x,y,&dir);
+        }
+    }
     pub fn retreat(&mut self) {
         if self.trail.get(self.trail_idx).is_some() && self.trail_idx > 0 {
             let pos = self.trail[self.trail_idx].clone();

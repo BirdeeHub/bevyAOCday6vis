@@ -63,12 +63,17 @@ fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2d);
 }
 
-// Update system that runs once every 250ms
-fn move_system(mut commands: Commands,
+
+#[derive(Component)]
+struct GridEntity;
+
+fn move_system(
+    mut commands: Commands,
     time: Res<Time>,
     mut timer: ResMut<MoveTimer>,
     mut room: ResMut<Room>, // Access to the room to modify it
-    asset_server: Res<AssetServer>
+    asset_server: Res<AssetServer>,
+    query: Query<Entity, With<GridEntity>>, // Query all entities with the GridEntity component
 ) {
     // Tick the timer
     if timer.0.tick(time.delta()).just_finished() {
@@ -82,7 +87,12 @@ fn move_system(mut commands: Commands,
 
         room.advance();
 
-        // Iterate over the Room grid
+        // Despawn all old grid entities
+        for entity in query.iter() {
+            commands.entity(entity).despawn();
+        }
+
+        // Iterate over the Room grid and spawn new entities
         for (x, row) in room.iter().enumerate() {
             for (y, cell) in row.iter().enumerate() {
                 let sprite = match cell {
@@ -101,11 +111,6 @@ fn move_system(mut commands: Commands,
                         custom_size: Some(Vec2::new(scaled_cell_size, scaled_cell_size)),
                         ..default()
                     },
-                    //RoomSpace::Guard(_) => Sprite {
-                    //    color: Color::srgb(1.0, 0.0, 0.0), // Red
-                    //    custom_size: Some(Vec2::new(scaled_cell_size, scaled_cell_size)),
-                    //    ..default()
-                    //},
                     RoomSpace::Guard(Direction::Up) => Sprite::from_image(asset_server.load("embedded://day6vis/sprites/Up1.png")),
                     RoomSpace::Guard(Direction::Left) => Sprite::from_image(asset_server.load("embedded://day6vis/sprites/Left1.png")),
                     RoomSpace::Guard(Direction::Right) => Sprite::from_image(asset_server.load("embedded://day6vis/sprites/Right1.png")),
@@ -120,9 +125,10 @@ fn move_system(mut commands: Commands,
                     )),
                     Visibility::default(),
                     Space,
+                    GridEntity, // Tag the entity
                 ));
             }
         }
-
     }
 }
+
