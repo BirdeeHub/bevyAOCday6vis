@@ -41,13 +41,19 @@ impl Display for RoomSpace {
 
 #[derive(Debug, PartialEq, Resource, Clone)]
 pub struct Room {
-    name: String,
+    pub name: String,
+    trail_idx: usize,
     grid: Vec<Vec<RoomSpace>>,
+    pub trail: Trail,
 }
 
 impl Room {
-    pub fn new(name: String) -> Room {
-        Room{name, grid: Vec::new()}
+    pub fn new(name: String, trail: Option<Trail>) -> Room {
+        if let Some(trail) = trail {
+            Room{name, trail_idx: 0, trail: trail.clone(), grid: Vec::new()}
+        } else {
+            Room{name, trail_idx: 0, trail: Trail::new(), grid: Vec::new()}
+        }
     }
     pub fn from_file<P: AsRef<Path>>(filepath: P, name: String) -> io::Result<Room> {
         let file = File::open(filepath)?;
@@ -68,7 +74,7 @@ impl Room {
             rawout.push(row);
         }
         // fix x and y...
-        let mut newroom = Room::new(name);
+        let mut newroom = Room::new(name, None);
         for i in 0..rawout[0].len() {
             let mut newrow = Vec::new();
             rawout.iter().for_each(|row|newrow.push(row[i].clone()));
@@ -76,18 +82,24 @@ impl Room {
         };
         Ok(newroom)
     }
-    pub fn apply_trail(&mut self, trail: &Trail, with_guard: bool) {
-        let mut trail: Trail = trail.clone();
-        if let Some((dir,(gx,gy))) = &trail.pop() {
-            for (_,(x,y)) in trail.iter() {
-                self.visit_space(*x,*y);
-            };
-            if with_guard {
-                self.add_guard(*gx,*gy, dir);
-            } else {
-                self.visit_space(*gx,*gy);
-            };
-        };
+    pub fn retreat(&mut self) {
+        if self.trail.get(self.trail_idx).is_some() && self.trail_idx > 0 {
+            let pos = self.trail[self.trail_idx].clone();
+            self[pos.1.0][pos.1.1] = RoomSpace::Empty;
+            self.trail_idx -= 1;
+            self.add_guard(pos.1.0,pos.1.1,&pos.0)
+        }
+    }
+    pub fn advance(&mut self) {
+        if self.trail.get(self.trail_idx).is_some() {
+            let pos = self.trail[self.trail_idx].clone();
+            self.trail_idx += 1;
+            if self.trail.get(self.trail_idx).is_some() {
+                self.visit_space(pos.1.0,pos.1.1);
+                let (dir,(x,y)) = self.trail[self.trail_idx].clone();
+                self.add_guard(x,y,&dir)
+            }
+        }
     }
     pub fn add_obstacle(&mut self, x:usize, y:usize) {
         self[x][y] = RoomSpace::Obstacle;
@@ -181,23 +193,23 @@ impl DerefMut for Trail {
 }
 
 #[derive(Debug, PartialEq, Clone, Resource)]
-pub struct CheckTrails(Vec<(usize,usize, Trail)>);
+pub struct CheckRooms(Vec<Room>);
 
-impl CheckTrails {
-    pub fn new() -> CheckTrails {
-        CheckTrails(Vec::new())
+impl CheckRooms {
+    pub fn new() -> CheckRooms {
+        CheckRooms(Vec::new())
     }
 }
 
-impl Deref for CheckTrails {
-    type Target = Vec<(usize,usize, Trail)>;
+impl Deref for CheckRooms {
+    type Target = Vec<Room>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl DerefMut for CheckTrails {
+impl DerefMut for CheckRooms {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }

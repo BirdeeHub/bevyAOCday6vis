@@ -2,31 +2,31 @@ use std::io::{self};
 
 use crate::types::*;
 
-pub fn run(filepath: &str) -> io::Result<(Room, Trail, CheckTrails)> {
+pub fn run(filepath: &str) -> io::Result<(Room, CheckRooms)> {
     let room = Room::from_file(filepath, "OG_ROOM".to_string())?;
 
     let mut board = room.clone();
     let boardx = board.len();
     let boardy = board[0].len();
-    let mut trail = Trail::new();
-    if check_for_loop(&mut board, &mut trail, boardx, boardy).is_some() {
+    if check_for_loop(&mut board, boardx, boardy).is_some() {
         return Err(io::Error::new(io::ErrorKind::InvalidData, "Board has loop in initial state!"));
     };
     
     let visited = board.iter().flat_map(|row| row.iter()).filter(|&cell| cell == &RoomSpace::Visited).count();
 
-    let mut chktrails = CheckTrails::new();
+    let mut chktrails = CheckRooms::new();
 
     let mut obstacles = Vec::new();
-    let trlclone = trail.clone();
+    let trlclone = board.trail.clone();
     let tocheck = deduplicate_vec(trlclone.iter().map(|(_,pos)|pos).collect());
     for (i,(x,y)) in tocheck.iter().enumerate().skip(1) {
-        println!("{} / {}",i,trail.len()-1);
-        let mut chktrl = Trail::new();
-        if let Some(obs) = check_for_loop(&mut room.clone(), &mut chktrl, *x,*y) {
+        println!("{} / {}",i,trlclone.len()-1);
+        let mut newroom = room.clone();
+        if let Some(obs) = check_for_loop(&mut newroom, *x,*y) {
             obstacles.push(obs);
+            newroom.add_obstacle(obs.0,obs.1);
         }
-        chktrails.push((*x, *y, chktrl))
+        chktrails.push(newroom);
     }
     obstacles = deduplicate_vec(obstacles);
 
@@ -34,10 +34,10 @@ pub fn run(filepath: &str) -> io::Result<(Room, Trail, CheckTrails)> {
 
     println!("Part 2: possible obstacle locations for loop: {:?}",obstacles.len());
 
-    Ok((room,trail,chktrails))
+    Ok((board,chktrails))
 }
 
-fn check_for_loop(room: &mut Room, trail: &mut Trail, obsx: usize, obsy: usize) -> Option<(usize,usize)> {
+fn check_for_loop(room: &mut Room, obsx: usize, obsy: usize) -> Option<(usize,usize)> {
     if obsx < room.len() && obsy < room[0].len() {
         if room[obsx][obsy] == RoomSpace::Obstacle {
             return None;
@@ -47,21 +47,21 @@ fn check_for_loop(room: &mut Room, trail: &mut Trail, obsx: usize, obsy: usize) 
     let mut continue_moving = true;
     let mut checkpoints = Vec::new();
     while continue_moving {
-        continue_moving = move_guard(room, trail);
-        if continue_moving && checkpoints.contains(trail.last().unwrap()) {
+        continue_moving = move_guard(room);
+        if continue_moving && checkpoints.contains(room.trail.last().unwrap()) {
             return Some((obsx,obsy))
         }
         if continue_moving {
-            checkpoints.push(trail.last().unwrap().clone());
+            checkpoints.push(room.trail.last().unwrap().clone());
         }
     }
     None
 }
 
-fn move_guard(room: &mut Room, trail: &mut Trail) -> bool {
+fn move_guard(room: &mut Room) -> bool {
     if let Some((direction,guard_pos)) = room.find_guard() {
         room.visit_space(guard_pos.0,guard_pos.1);
-        trail.push((direction.clone(),guard_pos));
+        room.trail.push((direction.clone(),guard_pos));
         if let Some((dir,newspace)) = get_newspace_with_obstacle(room, guard_pos, &direction) {
             if dir == direction {
                 room.add_guard(newspace.0,newspace.1,&dir);
