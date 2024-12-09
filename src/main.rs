@@ -55,7 +55,7 @@ fn main() -> Result<()> {
         .add_plugins(EmbeddedPlug)
         .insert_resource(testroom) // Insert Room as a resource to access in systems
         .insert_resource(checkrooms) // Insert Room as a resource to access in systems
-        .insert_resource(MoveTimer(Timer::from_seconds(0.05, TimerMode::Repeating))) // Add the timer resource
+        .insert_resource(MoveTimer(Timer::from_seconds(0.25, TimerMode::Repeating))) // Add the timer resource
         .add_systems(Startup,(setup_camera,room_setup,guard_spawn))
         .add_systems(Update,(move_guard,update_camera).chain()) // Set up camera
         .run(); // Spawn Room entities
@@ -199,15 +199,36 @@ fn move_guard(
             ));
         }
         let mut final_idx = 0;
+        let mut has_zero = false;
         for (entity, trailidx) in querytrail.iter() {
             if let Some(_) = room.trail.get(trailidx.index) {
+                if trailidx.index == 0 { has_zero = true; }
                 final_idx = trailidx.index;
             } else {
                 commands.entity(entity).despawn();
             }
         }
-        for (i, (dir,(x,y))) in room.get_current_trail().iter().enumerate() {
-            if i > final_idx {
+        if !has_zero {
+            if let Some((dir,(x,y))) = room.trail.get(0) {
+                commands.spawn((
+                    Sprite {
+                        color: Color::srgb(0.0, 1.0, 0.0), // Green
+                        custom_size: Some(Vec2::new(SCALED_CELL_SIZE/2., SCALED_CELL_SIZE/2.)),
+                        ..default()
+                    },
+                    Transform::from_translation(Vec3::new(
+                        *x as f32 * SCALED_CELL_SIZE + OFFSET_X,
+                        *y as f32 * -SCALED_CELL_SIZE + OFFSET_Y, // Use -scaled_cell_size for inverted Y
+                        1.0,
+                    )),
+                    Visibility::default(),
+                    TrailEntity::new(0),
+                    GridEntity, // Tag the entity
+                ));
+            }
+        }
+        for i in (final_idx+1)..room.get_current_trail().len() {
+            if let Some((dir,(x,y))) = room.trail.get(i) {
                 commands.spawn((
                     Sprite {
                         color: Color::srgb(0.0, 1.0, 0.0), // Green
