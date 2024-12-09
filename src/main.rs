@@ -55,7 +55,7 @@ fn main() -> Result<()> {
         .add_plugins(EmbeddedPlug)
         .insert_resource(testroom) // Insert Room as a resource to access in systems
         .insert_resource(checkrooms) // Insert Room as a resource to access in systems
-        .insert_resource(MoveTimer(Timer::from_seconds(0.25, TimerMode::Repeating))) // Add the timer resource
+        .insert_resource(MoveTimer(Timer::from_seconds(0.05, TimerMode::Repeating))) // Add the timer resource
         .add_systems(Startup,(setup_camera,room_setup,guard_spawn))
         .add_systems(Update,(move_guard,update_camera).chain()) // Set up camera
         .run(); // Spawn Room entities
