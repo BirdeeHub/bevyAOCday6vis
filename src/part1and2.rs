@@ -24,7 +24,6 @@ pub fn run(filepath: &str) -> io::Result<(Room, CheckRooms)> {
         let mut newroom = room.clone();
         if let Some(obs) = check_for_loop(&mut newroom, *x,*y) {
             obstacles.push(obs);
-            newroom.add_obstacle(obs.0,obs.1);
         }
         newroom.reset();
         chktrails.push(newroom);
