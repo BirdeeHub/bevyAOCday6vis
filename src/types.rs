@@ -137,6 +137,11 @@ impl Room {
     pub fn visit_space(&mut self, x:usize, y:usize) {
         self[x][y] = RoomSpace::Visited;
     }
+    pub fn get_guard_loc(&self) -> Option<(Direction,(usize,usize))> {
+        if let Some((dir,(x,y))) = self.trail.get(self.trail_idx) {
+            Some((dir.clone(),(*x,*y)))
+        } else { None }
+    }
     pub fn find_guard(&self) -> Option<(Direction,(usize,usize))> {
         for (i, _) in self.iter().enumerate() {
             for (j, item) in self[i].iter().enumerate() {
