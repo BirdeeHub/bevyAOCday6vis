@@ -128,6 +128,13 @@ impl Room {
             None
         }
     }
+    pub fn get_current_trail(&mut self) -> Trail {
+        let mut ret = Trail::new();
+        for i in 0..self.trail_idx {
+            ret.push(self.trail[i].clone());
+        }
+        ret
+    }
     pub fn add_obstacle(&mut self, x:usize, y:usize) {
         self[x][y] = RoomSpace::Obstacle;
     }

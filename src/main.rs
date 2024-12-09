@@ -29,6 +29,9 @@ struct Space {
     y: usize,
 }
 
+#[derive(Component)]
+struct TrailEntity;
+
 #[derive(Resource)]
 struct MoveTimer(Timer);
 
@@ -57,7 +60,7 @@ fn main() -> Result<()> {
         .insert_resource(checkrooms) // Insert Room as a resource to access in systems
         .insert_resource(MoveTimer(Timer::from_seconds(0.05, TimerMode::Repeating))) // Add the timer resource
         .add_systems(Startup,(setup_camera,room_setup,guard_spawn).chain())
-        .add_systems(Update,(move_guard,update_camera).chain()) // Set up camera
+        .add_systems(Update,(move_guard,update_trail,update_camera).chain()) // Set up camera
         .run(); // Spawn Room entities
 
     Ok(())
@@ -183,6 +186,39 @@ fn move_guard(
                 )),
                 Visibility::default(),
                 Guard { direction: Direction::Up, position: (x,y) },
+                GridEntity, // Tag the entity
+            ));
+        }
+    }
+}
+
+fn update_trail(
+    mut commands: Commands,
+    mut room: ResMut<Room>, // Access to the room to modify it
+    time: Res<Time>,
+    mut timer: ResMut<MoveTimer>,
+    asset_server: Res<AssetServer>,
+    query: Query<Entity, With<TrailEntity>>, // Query all entities with the GridEntity component
+) {
+    if timer.0.tick(time.delta()).just_finished() {
+        room.advance();
+        for entity in query.iter() {
+            commands.entity(entity).despawn();
+        }
+        for (dir,(x,y)) in room.get_current_trail().iter() {
+            commands.spawn((
+                Sprite {
+                    color: Color::srgb(0.0, 1.0, 0.0), // Green
+                    custom_size: Some(Vec2::new(SCALED_CELL_SIZE/2., SCALED_CELL_SIZE/2.)),
+                    ..default()
+                },
+                Transform::from_translation(Vec3::new(
+                    *x as f32 * SCALED_CELL_SIZE + OFFSET_X,
+                    *y as f32 * -SCALED_CELL_SIZE + OFFSET_Y, // Use -scaled_cell_size for inverted Y
+                    1.0,
+                )),
+                Visibility::default(),
+                TrailEntity,
                 GridEntity, // Tag the entity
             ));
         }
