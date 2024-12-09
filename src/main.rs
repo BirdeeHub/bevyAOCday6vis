@@ -55,9 +55,9 @@ fn main() -> Result<()> {
         .add_plugins(EmbeddedPlug)
         .insert_resource(testroom) // Insert Room as a resource to access in systems
         .insert_resource(checkrooms) // Insert Room as a resource to access in systems
-        .insert_resource(MoveTimer(Timer::from_seconds(0.05, TimerMode::Repeating))) // Add the timer resource
+        .insert_resource(MoveTimer(Timer::from_seconds(0.25, TimerMode::Repeating))) // Add the timer resource
         .add_systems(Startup,(setup_camera,room_setup,guard_spawn))
-        .add_systems(Update,(update_trail,(move_guard,update_camera).chain())) // Set up camera
+        .add_systems(Update,(move_guard,update_camera).chain()) // Set up camera
         .run(); // Spawn Room entities
 
     Ok(())
@@ -151,41 +151,12 @@ fn guard_spawn(
             Transform::from_translation(Vec3::new(
                 x as f32 * SCALED_CELL_SIZE + OFFSET_X,
                 y as f32 * -SCALED_CELL_SIZE + OFFSET_Y, // Use -scaled_cell_size for inverted Y
-                1.0,
+                2.0,
             )),
             Visibility::default(),
             Guard { direction: Direction::Up, position: (x,y) },
             GridEntity, // Tag the entity
         ));
-    }
-}
-
-fn move_guard(
-    mut commands: Commands,
-    mut room: ResMut<Room>, // Access to the room to modify it
-    time: Res<Time>,
-    mut timer: ResMut<MoveTimer>,
-    asset_server: Res<AssetServer>,
-    query: Query<Entity, With<Guard>>, // Query all entities with the GridEntity component
-) {
-    if timer.0.tick(time.delta()).just_finished() {
-        room.advance();
-        for entity in query.iter() {
-            commands.entity(entity).despawn();
-        }
-        if let Some((dir,(x,y))) = room.get_guard_loc() {
-            commands.spawn((
-                get_guard_sprite(&dir,1,asset_server),
-                Transform::from_translation(Vec3::new(
-                    x as f32 * SCALED_CELL_SIZE + OFFSET_X,
-                    y as f32 * -SCALED_CELL_SIZE + OFFSET_Y, // Use -scaled_cell_size for inverted Y
-                    1.0,
-                )),
-                Visibility::default(),
-                Guard { direction: Direction::Up, position: (x,y) },
-                GridEntity, // Tag the entity
-            ));
-        }
     }
 }
 
@@ -200,18 +171,35 @@ impl TrailEntity {
     }
 }
 
-fn update_trail(
+fn move_guard(
     mut commands: Commands,
     mut room: ResMut<Room>, // Access to the room to modify it
     time: Res<Time>,
     mut timer: ResMut<MoveTimer>,
     asset_server: Res<AssetServer>,
-    query: Query<(Entity, &TrailEntity)>, // Query all entities with the TrailEntity component AND their TrailEntity component
+    query: Query<Entity, With<Guard>>, // Query all entities with the GridEntity component
+    querytrail: Query<(Entity, &TrailEntity)>, // Query all entities with the TrailEntity component AND their TrailEntity component
 ) {
     if timer.0.tick(time.delta()).just_finished() {
         room.advance();
+        for entity in query.iter() {
+            commands.entity(entity).despawn();
+        }
+        if let Some((dir,(x,y))) = room.get_guard_loc() {
+            commands.spawn((
+                get_guard_sprite(&dir,1,asset_server),
+                Transform::from_translation(Vec3::new(
+                    x as f32 * SCALED_CELL_SIZE + OFFSET_X,
+                    y as f32 * -SCALED_CELL_SIZE + OFFSET_Y, // Use -scaled_cell_size for inverted Y
+                    2.0,
+                )),
+                Visibility::default(),
+                Guard { direction: dir, position: (x,y) },
+                GridEntity, // Tag the entity
+            ));
+        }
         let mut final_idx = 0;
-        for (entity, trailidx) in query.iter() {
+        for (entity, trailidx) in querytrail.iter() {
             if let Some(_) = room.trail.get(trailidx.index) {
                 final_idx = trailidx.index;
             } else {
