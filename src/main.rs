@@ -40,11 +40,6 @@ enum AppState {
 }
 
 #[derive(Resource)]
-struct MenuData {
-    button_entity: Entity,
-}
-
-#[derive(Resource)]
 struct MoveTimer(Timer);
 
 #[derive(Component)]
@@ -72,10 +67,12 @@ fn main() -> Result<()> {
         .insert_resource(testroom) // Insert Room as a resource to access in systems
         .insert_resource(checkrooms) // Insert Room as a resource to access in systems
         .insert_resource(MoveTimer(Timer::from_seconds(0.25, TimerMode::Repeating))) // Add the timer resource
-        .add_systems(Startup,(setup_camera,room_setup,guard_spawn))
+        .add_systems(Startup,(setup_camera,room_setup))
+        .add_systems(OnEnter(AppState::Part1),guard_spawn)
         .add_systems(Startup,setup_menu)
         .add_systems(Update,menu)
         .add_systems(Update,(move_guard,update_camera).chain().run_if(in_state(AppState::Part1))) // Set up camera
+        .add_systems(OnExit(AppState::Part1),cleanup_p1)
         .run(); // Spawn Room entities
 
     Ok(())
@@ -165,7 +162,7 @@ fn guard_spawn(
 ) {
     if let Some((dir,(x,y))) = room.get_guard_loc() {
         commands.spawn((
-            get_guard_sprite(&dir,1,asset_server),
+            Sprite::from_image(asset_server.load(get_guard_sprite(&dir,1))),
             Transform::from_translation(Vec3::new(
                 x as f32 * SCALED_CELL_SIZE + OFFSET_X,
                 y as f32 * -SCALED_CELL_SIZE + OFFSET_Y, // Use -scaled_cell_size for inverted Y
@@ -189,82 +186,80 @@ impl TrailEntity {
     }
 }
 
+const SPEED: f32 = 100.0;
 fn move_guard(
     mut commands: Commands,
     mut room: ResMut<Room>, // Access to the room to modify it
     time: Res<Time>,
     mut timer: ResMut<MoveTimer>,
     asset_server: Res<AssetServer>,
-    query: Query<Entity, With<Guard>>, // Query all entities with the GridEntity component
+    mut guardquery: Query<(Entity, &mut Transform, &mut Sprite), With<Guard>>, // Query all entities with the GridEntity component
     querytrail: Query<(Entity, &TrailEntity)>, // Query all entities with the TrailEntity component AND their TrailEntity component
 ) {
     if timer.0.tick(time.delta()).just_finished() {
         room.advance();
-        for entity in query.iter() {
-            commands.entity(entity).despawn();
-        }
+    }
+    for (entity, mut tform, mut sprite) in &mut guardquery {
+        // commands.entity(entity).despawn();
         if let Some((dir,(x,y))) = room.get_guard_loc() {
-            commands.spawn((
-                get_guard_sprite(&dir,1,asset_server),
-                Transform::from_translation(Vec3::new(
-                    x as f32 * SCALED_CELL_SIZE + OFFSET_X,
-                    y as f32 * -SCALED_CELL_SIZE + OFFSET_Y, // Use -scaled_cell_size for inverted Y
-                    2.0,
-                )),
-                Visibility::default(),
-                Guard { direction: dir, position: (x,y) },
-                GridEntity, // Tag the entity
-            ));
-        }
-        let mut final_idx = 0;
-        let mut has_zero = false;
-        for (entity, trailidx) in querytrail.iter() {
-            if let Some(_) = room.trail.get(trailidx.index) {
-                if trailidx.index == 0 { has_zero = true; }
-                final_idx = trailidx.index;
-            } else {
-                commands.entity(entity).despawn();
+            let mut direction = Vec3::ZERO;
+            direction.x = (x as f32 * SCALED_CELL_SIZE + OFFSET_X) - tform.translation.x;
+            direction.y = (y as f32 * -SCALED_CELL_SIZE + OFFSET_Y) - tform.translation.y; // Use -scaled_cell_size for inverted Y
+            if direction != Vec3::ZERO {
+                tform.translation += direction.normalize() * SPEED * time.delta_secs();
             }
-        }
-        if !has_zero {
-            if let Some((dir,(x,y))) = room.trail.get(0) {
-                commands.spawn((
-                    Sprite {
-                        color: Color::srgb(0.0, 1.0, 0.0), // Green
-                        custom_size: Some(Vec2::new(SCALED_CELL_SIZE/2., SCALED_CELL_SIZE/2.)),
-                        ..default()
-                    },
-                    Transform::from_translation(Vec3::new(
-                        *x as f32 * SCALED_CELL_SIZE + OFFSET_X,
-                        *y as f32 * -SCALED_CELL_SIZE + OFFSET_Y, // Use -scaled_cell_size for inverted Y
-                        1.0,
-                    )),
-                    Visibility::default(),
-                    TrailEntity::new(0),
-                    GridEntity, // Tag the entity
-                ));
-            }
-        }
-        for i in (final_idx+1)..room.get_current_trail().len() {
-            if let Some((dir,(x,y))) = room.trail.get(i) {
-                commands.spawn((
-                    Sprite {
-                        color: Color::srgb(0.0, 1.0, 0.0), // Green
-                        custom_size: Some(Vec2::new(SCALED_CELL_SIZE/2., SCALED_CELL_SIZE/2.)),
-                        ..default()
-                    },
-                    Transform::from_translation(Vec3::new(
-                        *x as f32 * SCALED_CELL_SIZE + OFFSET_X,
-                        *y as f32 * -SCALED_CELL_SIZE + OFFSET_Y, // Use -scaled_cell_size for inverted Y
-                        1.0,
-                    )),
-                    Visibility::default(),
-                    TrailEntity::new(i),
-                    GridEntity, // Tag the entity
-                ));
-            }
+            // sprite = Sprite::from_image(asset_server.load(get_guard_sprite(&dir,1)));
         }
     }
+
+    // let mut final_idx = 0;
+    // let mut has_zero = false;
+    // for (entity, trailidx) in querytrail.iter() {
+    //     if let Some(_) = room.trail.get(trailidx.index) {
+    //         if trailidx.index == 0 { has_zero = true; }
+    //         final_idx = trailidx.index;
+    //     } else {
+    //         commands.entity(entity).despawn();
+    //     }
+    // }
+    // if !has_zero {
+    //     if let Some((dir,(x,y))) = room.trail.get(0) {
+    //         commands.spawn((
+    //             Sprite {
+    //                 color: Color::srgb(0.0, 1.0, 0.0), // Green
+    //                 custom_size: Some(Vec2::new(SCALED_CELL_SIZE/2., SCALED_CELL_SIZE/2.)),
+    //                 ..default()
+    //             },
+    //             Transform::from_translation(Vec3::new(
+    //                 *x as f32 * SCALED_CELL_SIZE + OFFSET_X,
+    //                 *y as f32 * -SCALED_CELL_SIZE + OFFSET_Y, // Use -scaled_cell_size for inverted Y
+    //                 1.0,
+    //             )),
+    //             Visibility::default(),
+    //             TrailEntity::new(0),
+    //             GridEntity, // Tag the entity
+    //         ));
+    //     }
+    // }
+    // for i in (final_idx+1)..room.get_current_trail().len() {
+    //     if let Some((dir,(x,y))) = room.trail.get(i) {
+    //         commands.spawn((
+    //             Sprite {
+    //                 color: Color::srgb(0.0, 1.0, 0.0), // Green
+    //                 custom_size: Some(Vec2::new(SCALED_CELL_SIZE/2., SCALED_CELL_SIZE/2.)),
+    //                 ..default()
+    //             },
+    //             Transform::from_translation(Vec3::new(
+    //                 *x as f32 * SCALED_CELL_SIZE + OFFSET_X,
+    //                 *y as f32 * -SCALED_CELL_SIZE + OFFSET_Y, // Use -scaled_cell_size for inverted Y
+    //                 1.0,
+    //             )),
+    //             Visibility::default(),
+    //             TrailEntity::new(i),
+    //             GridEntity, // Tag the entity
+    //         ));
+    //     }
+    // }
 }
 
 fn setup_menu(mut commands: Commands) {
@@ -305,7 +300,7 @@ fn setup_menu(mut commands: Commands) {
                 });
         })
         .id();
-    commands.insert_resource(MenuData { button_entity });
+    // commands.insert_resource(MenuData { button_entity });
 }
 
 fn menu(
@@ -333,5 +328,14 @@ fn menu(
                 *color = NORMAL_BUTTON.into();
             }
         }
+    }
+}
+
+fn cleanup_p1(mut commands: Commands, guard: Query<Entity, With<Guard>>, trail: Query<Entity, With<TrailEntity>>) {
+    for entity in guard.iter() {
+        commands.entity(entity).despawn_recursive();
+    }
+    for entity in trail.iter() {
+        commands.entity(entity).despawn_recursive();
     }
 }
