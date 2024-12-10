@@ -2,7 +2,7 @@ use std::io::{self};
 
 use crate::types::*;
 
-pub fn run(filepath: &str) -> io::Result<(Room, CheckRooms)> {
+pub fn run(filepath: &str) -> io::Result<(Room, CheckTrails)> {
     let room = Room::from_file(filepath, "OG_ROOM".to_string())?;
 
     let mut board = room.clone();
@@ -14,7 +14,7 @@ pub fn run(filepath: &str) -> io::Result<(Room, CheckRooms)> {
     
     let visited = board.iter().flat_map(|row| row.iter()).filter(|&cell| cell == &RoomSpace::Visited).count();
 
-    let mut chktrails = CheckRooms::new();
+    let mut chktrails = CheckTrails::new();
 
     let mut obstacles = Vec::new();
     let trlclone = board.trail.clone();
@@ -26,7 +26,7 @@ pub fn run(filepath: &str) -> io::Result<(Room, CheckRooms)> {
             obstacles.push(obs);
         }
         newroom.reset();
-        chktrails.push(newroom);
+        chktrails.push(((*x,*y),newroom.trail));
     }
     obstacles = deduplicate_vec(obstacles);
 

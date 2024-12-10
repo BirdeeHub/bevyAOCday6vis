@@ -24,6 +24,36 @@ const SCALED_CELL_SIZE: f32 = CELL_SIZE * SCALE_FACTOR;
 /// How quickly should the camera snap to the desired location.
 const CAMERA_DECAY_RATE: f32 = 2.;
 
+fn main() -> Result<()> {
+    // Get the Room and trails from your logic
+    let args: Vec<String> = std::env::args().collect();
+    let filepath = match args.get(1) {
+        Some(filepath_arg) => filepath_arg.to_string(),
+        _ => env::var("AOC_INPUT").expect("AOC_INPUT not set")
+    };
+    let (room, chktrails) = part1and2::run(&filepath)?;
+    let testroom = room.clone();
+    let checktrails = chktrails.clone();
+
+    // Initialize Bevy App
+    let mut app = App::new();
+    app.add_plugins(DefaultPlugins) // Default plugins for window and rendering
+        .add_plugins(EmbeddedPlug)
+        .init_state::<AppState>()
+        .insert_resource(testroom) // Insert Room as a resource to access in systems
+        .insert_resource(checktrails) // Insert Room as a resource to access in systems
+        .insert_resource(MoveTimer(Timer::from_seconds(0.05, TimerMode::Repeating))) // Add the timer resource
+        .add_systems(Startup,(setup_camera,room_setup))
+        .add_systems(Startup,setup_menu)
+        .add_systems(Update,menu)
+        .add_systems(OnEnter(AppState::Part1),guard_spawn)
+        .add_systems(Update,(render_trail,move_guard,update_camera).chain().run_if(in_state(AppState::Part1))) // Set up camera
+        .add_systems(OnExit(AppState::Part1),cleanup_p1)
+        .run(); // Spawn Room entities
+
+    Ok(())
+}
+
 // Components to represent Room elements visually.
 #[derive(Component)]
 struct Space {
@@ -45,36 +75,6 @@ struct MoveTimer(Timer);
 #[derive(Component)]
 struct Guard {
     pathindex: usize,
-}
-
-fn main() -> Result<()> {
-    // Get the Room and trails from your logic
-    let args: Vec<String> = std::env::args().collect();
-    let filepath = match args.get(1) {
-        Some(filepath_arg) => filepath_arg.to_string(),
-        _ => env::var("AOC_INPUT").expect("AOC_INPUT not set")
-    };
-    let (room, chkrooms) = part1and2::run(&filepath)?;
-    let testroom = room.clone();
-    let checkrooms = chkrooms.clone();
-
-    // Initialize Bevy App
-    let mut app = App::new();
-    app.add_plugins(DefaultPlugins) // Default plugins for window and rendering
-        .add_plugins(EmbeddedPlug)
-        .init_state::<AppState>()
-        .insert_resource(testroom) // Insert Room as a resource to access in systems
-        .insert_resource(checkrooms) // Insert Room as a resource to access in systems
-        .insert_resource(MoveTimer(Timer::from_seconds(0.05, TimerMode::Repeating))) // Add the timer resource
-        .add_systems(Startup,(setup_camera,room_setup))
-        .add_systems(OnEnter(AppState::Part1),guard_spawn)
-        .add_systems(Startup,setup_menu)
-        .add_systems(Update,menu)
-        .add_systems(Update,(move_guard,update_camera).chain().run_if(in_state(AppState::Part1))) // Set up camera
-        .add_systems(OnExit(AppState::Part1),cleanup_p1)
-        .run(); // Spawn Room entities
-
-    Ok(())
 }
 
 // Set up a 2D camera
@@ -185,14 +185,32 @@ impl TrailEntity {
     }
 }
 
-const SPEED: f32 = 100.0;
 fn move_guard(
+    mut commands: Commands,
+    mut room: ResMut<Room>, // Access to the room to modify it
+    time: Res<Time>,
+    asset_server: Res<AssetServer>,
+    mut guardquery: Query<(Entity, &mut Transform, &mut Sprite), With<Guard>>, // Query all entities with the GridEntity component
+) {
+    for (entity, mut tform, mut sprite) in &mut guardquery {
+        if let Some((dir,(x,y))) = room.get_guard_loc() {
+            let mut direction = Vec3::ZERO;
+            direction.x = (x as f32 * SCALED_CELL_SIZE + OFFSET_X) - tform.translation.x;
+            direction.y = (y as f32 * -SCALED_CELL_SIZE + OFFSET_Y) - tform.translation.y; // Use -scaled_cell_size for inverted Y
+            if direction != Vec3::ZERO {
+                tform.translation += direction * SCALED_CELL_SIZE * time.delta_secs();
+            }
+            *sprite = Sprite::from_image(asset_server.load(get_guard_sprite(&dir,1)));
+        }
+    }
+}
+
+fn render_trail(
     mut commands: Commands,
     mut room: ResMut<Room>, // Access to the room to modify it
     time: Res<Time>,
     mut timer: ResMut<MoveTimer>,
     asset_server: Res<AssetServer>,
-    mut guardquery: Query<(Entity, &mut Transform, &mut Sprite), With<Guard>>, // Query all entities with the GridEntity component
     querytrail: Query<(Entity, &TrailEntity)>, // Query all entities with the TrailEntity component AND their TrailEntity component
 ) {
     if timer.0.tick(time.delta()).just_finished() {
@@ -246,18 +264,6 @@ fn move_guard(
             }
         }
     }
-    for (entity, mut tform, mut sprite) in &mut guardquery {
-        if let Some((dir,(x,y))) = room.get_guard_loc() {
-            let mut direction = Vec3::ZERO;
-            direction.x = (x as f32 * SCALED_CELL_SIZE + OFFSET_X) - tform.translation.x;
-            direction.y = (y as f32 * -SCALED_CELL_SIZE + OFFSET_Y) - tform.translation.y; // Use -scaled_cell_size for inverted Y
-            if direction != Vec3::ZERO {
-                tform.translation += direction * SCALED_CELL_SIZE * time.delta_secs();
-            }
-            *sprite = Sprite::from_image(asset_server.load(get_guard_sprite(&dir,1)));
-        }
-    }
-
 }
 
 #[derive(Component)]

@@ -240,23 +240,23 @@ impl DerefMut for Trail {
 }
 
 #[derive(Debug, PartialEq, Clone, Resource)]
-pub struct CheckRooms(Vec<Room>);
+pub struct CheckTrails(Vec<((usize,usize),Trail)>);
 
-impl CheckRooms {
-    pub fn new() -> CheckRooms {
-        CheckRooms(Vec::new())
+impl CheckTrails {
+    pub fn new() -> CheckTrails {
+        CheckTrails(Vec::new())
     }
 }
 
-impl Deref for CheckRooms {
-    type Target = Vec<Room>;
+impl Deref for CheckTrails {
+    type Target = Vec<((usize,usize),Trail)>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl DerefMut for CheckRooms {
+impl DerefMut for CheckTrails {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
