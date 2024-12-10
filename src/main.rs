@@ -339,7 +339,8 @@ fn menu(
     }
 }
 
-fn cleanup_p1(mut commands: Commands, guard: Query<Entity, With<Guard>>, trail: Query<Entity, With<TrailEntity>>) {
+fn cleanup_p1(mut commands: Commands, mut room: ResMut<Room>, guard: Query<Entity, With<Guard>>, trail: Query<Entity, With<TrailEntity>>) {
+    room.reset();
     for entity in guard.iter() {
         commands.entity(entity).despawn_recursive();
     }
