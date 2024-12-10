@@ -44,8 +44,7 @@ struct MoveTimer(Timer);
 
 #[derive(Component)]
 struct Guard {
-    direction: Direction,
-    position: (usize, usize),
+    pathindex: usize,
 }
 
 fn main() -> Result<()> {
@@ -169,7 +168,7 @@ fn guard_spawn(
                 2.0,
             )),
             Visibility::default(),
-            Guard { direction: dir, position: (x,y) },
+            Guard { pathindex: 0, },
             GridEntity, // Tag the entity
         ));
     }
@@ -248,7 +247,6 @@ fn move_guard(
         }
     }
     for (entity, mut tform, mut sprite) in &mut guardquery {
-        // commands.entity(entity).despawn();
         if let Some((dir,(x,y))) = room.get_guard_loc() {
             let mut direction = Vec3::ZERO;
             direction.x = (x as f32 * SCALED_CELL_SIZE + OFFSET_X) - tform.translation.x;
@@ -300,16 +298,16 @@ fn setup_menu(mut commands: Commands) {
                 });
         })
         .id();
-    // commands.insert_resource(MenuData { button_entity });
 }
 
 fn menu(
     mut next_state: ResMut<NextState<AppState>>,
     mut state: ResMut<State<AppState>>,
     mut interaction_query: Query<
-        (&Interaction, &mut BackgroundColor),
+        (Entity, &Interaction, &mut BackgroundColor),
         (Changed<Interaction>, With<Button>),
     >,
+    text_query: Query<&Text, (With<TextFont>, With<TextColor>, With<Parent>)>,
 ) {
     for (interaction, mut color) in &mut interaction_query {
         match *interaction {
