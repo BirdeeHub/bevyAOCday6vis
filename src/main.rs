@@ -208,7 +208,7 @@ fn move_guard(
             if direction != Vec3::ZERO {
                 tform.translation += direction.normalize() * SPEED * time.delta_secs();
             }
-            // sprite = Sprite::from_image(asset_server.load(get_guard_sprite(&dir,1)));
+            *sprite = Sprite::from_image(asset_server.load(get_guard_sprite(&dir,1)));
         }
     }
 
