@@ -68,13 +68,14 @@ fn main() -> Result<()> {
     let mut app = App::new();
     app.add_plugins(DefaultPlugins) // Default plugins for window and rendering
         .add_plugins(EmbeddedPlug)
+        .init_state::<AppState>()
         .insert_resource(testroom) // Insert Room as a resource to access in systems
         .insert_resource(checkrooms) // Insert Room as a resource to access in systems
         .insert_resource(MoveTimer(Timer::from_seconds(0.25, TimerMode::Repeating))) // Add the timer resource
         .add_systems(Startup,(setup_camera,room_setup,guard_spawn))
         .add_systems(Startup,setup_menu)
         .add_systems(Update,menu)
-        .add_systems(Update,(move_guard,update_camera).chain()) // Set up camera
+        .add_systems(Update,(move_guard,update_camera).chain().run_if(in_state(AppState::Part1))) // Set up camera
         .run(); // Spawn Room entities
 
     Ok(())
@@ -308,7 +309,8 @@ fn setup_menu(mut commands: Commands) {
 }
 
 fn menu(
-    // mut next_state: ResMut<NextState<AppState>>,
+    mut next_state: ResMut<NextState<AppState>>,
+    mut state: ResMut<State<AppState>>,
     mut interaction_query: Query<
         (&Interaction, &mut BackgroundColor),
         (Changed<Interaction>, With<Button>),
@@ -318,7 +320,11 @@ fn menu(
         match *interaction {
             Interaction::Pressed => {
                 *color = PRESSED_BUTTON.into();
-                // next_state.set(AppState::InGame);
+                match state.get() {
+                    AppState::InputScreen => next_state.set(AppState::Part1),
+                    AppState::Part1 => next_state.set(AppState::Part2),
+                    AppState::Part2 => next_state.set(AppState::Part1),
+                }
             }
             Interaction::Hovered => {
                 *color = HOVERED_BUTTON.into();
