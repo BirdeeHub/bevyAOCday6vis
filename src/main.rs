@@ -1,7 +1,6 @@
 use std::io::Result;
 use std::env;
 use bevy::prelude::*;
-use bevy::asset::*;
 use bevy::time::*;
 mod part1and2;
 mod types;
@@ -16,6 +15,9 @@ const SCALE_FACTOR: f32 = 1.0; // Scaling factor for cell size
 const OFFSET_X: f32 = -500.0; // Offset to move the grid horizontally
 const OFFSET_Y: f32 = 500.0; // Offset to move the grid vertically
 
+const NORMAL_BUTTON: Color = Color::srgb(0.15, 0.15, 0.15);
+const HOVERED_BUTTON: Color = Color::srgb(0.25, 0.25, 0.25);
+const PRESSED_BUTTON: Color = Color::srgb(0.35, 0.75, 0.35);
 // Adjust the size and position
 const SCALED_CELL_SIZE: f32 = CELL_SIZE * SCALE_FACTOR;
 
@@ -27,6 +29,19 @@ const CAMERA_DECAY_RATE: f32 = 2.;
 struct Space {
     x: usize,
     y: usize,
+}
+
+#[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
+enum AppState {
+    #[default]
+    InputScreen,
+    Part1,
+    Part2
+}
+
+#[derive(Resource)]
+struct MenuData {
+    button_entity: Entity,
 }
 
 #[derive(Resource)]
@@ -57,6 +72,8 @@ fn main() -> Result<()> {
         .insert_resource(checkrooms) // Insert Room as a resource to access in systems
         .insert_resource(MoveTimer(Timer::from_seconds(0.25, TimerMode::Repeating))) // Add the timer resource
         .add_systems(Startup,(setup_camera,room_setup,guard_spawn))
+        .add_systems(Startup,setup_menu)
+        .add_systems(Update,menu)
         .add_systems(Update,(move_guard,update_camera).chain()) // Set up camera
         .run(); // Spawn Room entities
 
@@ -244,6 +261,70 @@ fn move_guard(
                     TrailEntity::new(i),
                     GridEntity, // Tag the entity
                 ));
+            }
+        }
+    }
+}
+
+fn setup_menu(mut commands: Commands) {
+    let button_entity = commands
+        .spawn(Node {
+            // center button
+            width: Val::Vw(100.),
+            height: Val::Vh(100.),
+            border: UiRect::axes(Val::Vw(5.), Val::Vh(5.)),
+            justify_content: JustifyContent::End,
+            align_items: AlignItems::Start,
+            ..default()
+        })
+        .with_children(|parent| {
+            parent
+                .spawn((
+                    Button,
+                    Node {
+                        width: Val::Px(150.),
+                        height: Val::Px(65.),
+                        // horizontally center child text
+                        justify_content: JustifyContent::Center,
+                        // vertically center child text
+                        align_items: AlignItems::Center,
+                        ..default()
+                    },
+                    BackgroundColor(NORMAL_BUTTON),
+                ))
+                .with_children(|parent| {
+                    parent.spawn((
+                        Text::new("Input"),
+                        TextFont {
+                            font_size: 33.0,
+                            ..default()
+                        },
+                        TextColor(Color::srgb(0.9, 0.9, 0.9)),
+                    ));
+                });
+        })
+        .id();
+    commands.insert_resource(MenuData { button_entity });
+}
+
+fn menu(
+    // mut next_state: ResMut<NextState<AppState>>,
+    mut interaction_query: Query<
+        (&Interaction, &mut BackgroundColor),
+        (Changed<Interaction>, With<Button>),
+    >,
+) {
+    for (interaction, mut color) in &mut interaction_query {
+        match *interaction {
+            Interaction::Pressed => {
+                *color = PRESSED_BUTTON.into();
+                // next_state.set(AppState::InGame);
+            }
+            Interaction::Hovered => {
+                *color = HOVERED_BUTTON.into();
+            }
+            Interaction::None => {
+                *color = NORMAL_BUTTON.into();
             }
         }
     }
