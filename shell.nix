@@ -1,5 +1,6 @@
 { shellPkg
 , pkg-config
+, fenix
 , APPNAME
 , mkShell
 , pkgs
@@ -9,21 +10,22 @@
 # dev shells should not contain the final program.
 # They should have the environment
 # needed to BUILD (and run) the final program.
-  DEVSHELL = mkShell (rec {
+  DEVSHELL = mkShell {
     packages = [];
     inputsFrom = [];
     DEVSHELL = 0;
     inherit APPNAME;
     nativeBuildInputs = [ pkg-config ];
     buildInputs = with pkgs; [
+      fenix.packages.x86_64-linux.default.toolchain
+      cargo-edit
       alsa-lib
       udev
       vulkan-loader
-      lld
+      llvmPackages.bintools
       clang
       rustup
       lldb
-      rustup-toolchain-install-master
       cargo-watch
       pkg-config
       xorg.libX11
@@ -41,6 +43,6 @@
       export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:${lib.makeLibraryPath (with pkgs; [ alsa-lib udev vulkan-loader libxkbcommon])}"
       exec ${shellPkg}
     '';
-  });
+  };
 in
 DEVSHELL

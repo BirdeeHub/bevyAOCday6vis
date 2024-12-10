@@ -1,6 +1,10 @@
 {
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
+    fenix = {
+      url = "github:nix-community/fenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
   outputs = { nixpkgs, ... }@inputs: let
     forEachSystem = with builtins; f: let # flake-utils.lib.eachSystem
