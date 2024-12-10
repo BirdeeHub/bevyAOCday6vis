@@ -260,6 +260,8 @@ fn move_guard(
 
 }
 
+#[derive(Component)]
+struct StateButtonText;
 fn setup_menu(mut commands: Commands) {
     let button_entity = commands
         .spawn(Node {
@@ -294,6 +296,7 @@ fn setup_menu(mut commands: Commands) {
                             ..default()
                         },
                         TextColor(Color::srgb(0.9, 0.9, 0.9)),
+                        StateButtonText,
                     ));
                 });
         })
@@ -304,26 +307,33 @@ fn menu(
     mut next_state: ResMut<NextState<AppState>>,
     mut state: ResMut<State<AppState>>,
     mut interaction_query: Query<
-        (Entity, &Interaction, &mut BackgroundColor),
+        (&Interaction, &mut BackgroundColor),
         (Changed<Interaction>, With<Button>),
     >,
-    text_query: Query<&Text, (With<TextFont>, With<TextColor>, With<Parent>)>,
+    mut button_text: Query<&mut Text, With<StateButtonText>>
 ) {
     for (interaction, mut color) in &mut interaction_query {
-        match *interaction {
-            Interaction::Pressed => {
-                *color = PRESSED_BUTTON.into();
-                match state.get() {
-                    AppState::InputScreen => next_state.set(AppState::Part1),
-                    AppState::Part1 => next_state.set(AppState::Part2),
-                    AppState::Part2 => next_state.set(AppState::Part1),
+        for mut text in &mut button_text {
+            *text = Text::new(match state.get() {
+                AppState::InputScreen => "Part 1",
+                AppState::Part1 => "Part 2",
+                AppState::Part2 => "Input",
+            });
+            match *interaction {
+                Interaction::Pressed => {
+                    *color = PRESSED_BUTTON.into();
+                    match state.get() {
+                        AppState::InputScreen => next_state.set(AppState::Part1),
+                        AppState::Part1 => next_state.set(AppState::Part2),
+                        AppState::Part2 => next_state.set(AppState::InputScreen),
+                    }
                 }
-            }
-            Interaction::Hovered => {
-                *color = HOVERED_BUTTON.into();
-            }
-            Interaction::None => {
-                *color = NORMAL_BUTTON.into();
+                Interaction::Hovered => {
+                    *color = HOVERED_BUTTON.into();
+                }
+                Interaction::None => {
+                    *color = NORMAL_BUTTON.into();
+                }
             }
         }
     }
