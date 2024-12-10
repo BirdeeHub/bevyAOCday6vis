@@ -21,6 +21,10 @@
       vulkan-loader
       lld
       clang
+      rustup
+      lldb
+      rustup-toolchain-install-master
+      cargo-watch
       pkg-config
       xorg.libX11
       xorg.libXcursor
