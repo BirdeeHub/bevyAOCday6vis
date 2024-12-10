@@ -169,7 +169,7 @@ fn guard_spawn(
                 2.0,
             )),
             Visibility::default(),
-            Guard { direction: Direction::Up, position: (x,y) },
+            Guard { direction: dir, position: (x,y) },
             GridEntity, // Tag the entity
         ));
     }

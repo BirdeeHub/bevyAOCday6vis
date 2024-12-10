@@ -147,7 +147,15 @@ impl Room {
     pub fn get_guard_loc(&self) -> Option<(Direction,(usize,usize))> {
         if let Some((dir,(x,y))) = self.trail.get(self.trail_idx) {
             Some((dir.clone(),(*x,*y)))
-        } else { None }
+        } else if self.trail_idx >= self.trail.len() {
+            if let Some(ret) = self.trail.last() {
+                Some(ret.clone())
+            } else {
+                None
+            }
+        } else {
+            None
+        }
     }
     pub fn find_guard(&self) -> Option<(Direction,(usize,usize))> {
         for (i, _) in self.iter().enumerate() {
