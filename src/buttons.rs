@@ -46,11 +46,12 @@ pub fn setup_menu(mut commands: Commands) {
 
 pub fn menu(
     mut next_state: ResMut<NextState<AppState>>,
-    mut state: ResMut<State<AppState>>,
+    state: Res<State<AppState>>,
     mut interaction_query: Query<
         (&Interaction, &mut BackgroundColor),
         (Changed<Interaction>, With<Button>),
     >,
+    stateinfo: Res<StateInfo>,
     mut button_text: Query<&mut Text, With<StateButtonText>>
 ) {
     for (interaction, mut color) in &mut interaction_query {

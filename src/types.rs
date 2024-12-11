@@ -16,7 +16,23 @@ pub const SCALED_CELL_SIZE: f32 = CELL_SIZE * SCALE_FACTOR;
 pub const CAMERA_DECAY_RATE: f32 = 2.;
 
 #[derive(Resource,Clone, Copy, PartialEq)]
-pub struct CameraTarget(pub usize);
+pub struct StateInfo{
+    pub room_idx: Option<usize>,
+    pub camera_target: usize,
+    pub trace_only: bool,
+    pub seq: bool,
+}
+impl StateInfo {
+    pub fn new() -> StateInfo {
+        StateInfo{camera_target:0,trace_only:true,seq:true,room_idx:None,}
+    }
+    pub fn p1_loaded(guards:&AllGuards) -> bool {
+        ! guards.is_empty()
+    }
+    pub fn p2_loaded(room:&Room,guards:&AllGuards) -> bool {
+        room.to_check.len() <= guards.0.len()
+    }
+}
 
 #[derive(Debug, PartialEq, Clone, Hash, Eq)]
 pub enum Direction {
@@ -254,5 +270,38 @@ pub struct TrailEntity {
 impl TrailEntity {
     pub fn new(index: usize) -> TrailEntity {
         TrailEntity{index}
+    }
+}
+
+#[derive(Debug, Clone, Resource)]
+pub struct AllRooms(pub Vec<(Room,AllGuards)>);
+
+impl AllRooms {
+    pub fn new() -> AllRooms {
+        AllRooms(Vec::new())
+    }
+    pub fn get_room_mut(&mut self,room_idx:Option<usize>) -> Option<&mut (Room,AllGuards)> {
+        if let Some(room_idx) = room_idx {
+            self.0.get_mut(room_idx)
+        } else { return None; }
+    }
+    pub fn get_room(&self,room_idx:Option<usize>) -> Option<&(Room,AllGuards)> {
+        if let Some(room_idx) = room_idx {
+            self.0.get(room_idx)
+        } else { return None; }
+    }
+}
+
+impl Deref for AllRooms {
+    type Target = Vec<(Room,AllGuards)>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for AllRooms {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
