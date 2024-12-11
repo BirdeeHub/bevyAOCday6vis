@@ -53,29 +53,43 @@ pub enum RoomSpace {
 #[derive(Debug, PartialEq, Resource, Clone)]
 pub struct Room {
     grid: Vec<Vec<RoomSpace>>,
+    initial_guard_pos: Option<(Direction,(usize,usize))>,
     pub to_check: Vec<(usize,usize)>,
 }
 
 impl Room {
     pub fn new() -> Room {
-        Room{to_check: Vec::new(), grid: Vec::new()}
+        Room{to_check: Vec::new(), grid: Vec::new(), initial_guard_pos:None}
     }
-    pub fn from_string(input: String) -> Room {
+    pub fn from_string(input: String) -> Result<Room,String> {
         let mut rawout:Vec<Vec<RoomSpace>> = Vec::new();
+
+        let mut guard_found = false;
 
         for line in input.lines() {
             let mut row:Vec<RoomSpace> = Vec::new();
             for c in line.chars() {
-                row.push(match c {
+                let value = match c {
                     '^' => RoomSpace::Guard(Direction::Up),
                     '<' => RoomSpace::Guard(Direction::Left),
                     '>' => RoomSpace::Guard(Direction::Right),
                     'v' => RoomSpace::Guard(Direction::Down),
                     '#' => RoomSpace::Obstacle,
                     _ => RoomSpace::Empty,
-                });
+                };
+                if let RoomSpace::Guard(_) = value {
+                    if guard_found {
+                        return Err("too many guards".to_string());
+                    } else {
+                        guard_found = true;
+                    }
+                };
+                row.push(value);
             }
             rawout.push(row);
+        }
+        if !guard_found {
+            return Err("no guard".to_string());
         }
         // fix x and y...
         let mut newroom = Room::new();
@@ -84,7 +98,8 @@ impl Room {
             rawout.iter().for_each(|row|newrow.push(row[i].clone()));
             newroom.push(newrow);
         };
-        newroom
+        newroom.initial_guard_pos = newroom.find_guard();
+        Ok(newroom)
     }
     pub fn reset(&mut self) {
         // Iterate through the grid and reset RoomSpace values
@@ -96,7 +111,10 @@ impl Room {
                     _ => cell.clone(), // Leave other spaces unchanged
                 };
             }
-        }
+        };
+        if let Some((dir,(x,y))) = self.initial_guard_pos.clone() {
+            self.add_guard(x,y,&dir);
+        };
     }
     pub fn add_obstacle(&mut self, x:usize, y:usize) {
         self[x][y] = RoomSpace::Obstacle;

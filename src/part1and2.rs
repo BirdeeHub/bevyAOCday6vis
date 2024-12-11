@@ -10,8 +10,8 @@ pub fn read_file(file_path: &str) -> io::Result<String> {
     Ok(contents)
 }
 
-pub fn part1(input: String) -> (Room,Guard,usize) {
-    let mut board = Room::from_string(input);
+pub fn part1(input: String) -> Result<(Room,Guard,usize), String> {
+    let mut board = Room::from_string(input)?;
     let boardx = board.len();
     let boardy = board[0].len();
     let mut trail = Trail::new();
@@ -21,7 +21,7 @@ pub fn part1(input: String) -> (Room,Guard,usize) {
     let visited = board.iter().flat_map(|row| row.iter()).filter(|&cell| cell == &RoomSpace::Visited).count();
     board.reset();
     board.to_check = to_check;
-    return (board, Guard::new(trail.clone(),None,is_loop,0),visited);
+    return Ok((board, Guard::new(trail.clone(),None,is_loop,0),visited));
 }
 
 pub fn part2(room: &Room, initial_path_is_loop: bool, obsx: usize, obsy: usize, index: usize) -> Guard {
