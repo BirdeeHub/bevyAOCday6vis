@@ -21,7 +21,7 @@ fn main() -> Result<()> {
         .insert_resource(MoveTimer(Timer::from_seconds(0.05, TimerMode::Repeating)))
         .add_systems(Startup,(crate::camera::setup_camera,crate::buttons::setup_menu))
         .add_systems(Update,(calc_room,crate::buttons::menu))
-        .add_systems(OnEnter(AppState::InputScreen),load_room)
+        .add_systems(OnExit(AppState::InputScreen),load_room)
         .add_systems(OnEnter(AppState::Part1),(room_setup, guard_spawn).chain())
         .add_systems(Update,(render_trail,move_guard,crate::camera::update_camera).chain().run_if(in_state(AppState::Part1)))
         .add_systems(OnExit(AppState::Part1),(cleanup_guards, cleanup_room).chain())
