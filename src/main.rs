@@ -13,8 +13,7 @@ use crate::asset::{EmbeddedPlug, get_guard_sprite};
 
 fn main() -> Result<()> {
 
-    let mut app = App::new();
-    app.add_plugins(DefaultPlugins)
+    App::new().add_plugins(DefaultPlugins)
         .add_plugins(EmbeddedPlug)
         .init_state::<AppState>()
         .insert_resource(AllRooms::new())
