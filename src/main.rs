@@ -118,7 +118,7 @@ fn guard_spawn(
     mut commands: Commands,
     rooms: Res<AllRooms>,
     stateinfo: Res<StateInfo>,
-    mut state: Res<State<AppState>>,
+    state: Res<State<AppState>>,
     asset_server: Res<AssetServer>,
 ) {
     let Some((room, guards)) = rooms.get_room(stateinfo.room_idx) else { return; };
@@ -141,7 +141,7 @@ fn guard_spawn(
 }
 
 fn move_guard(
-    mut commands: Commands,
+    commands: Commands,
     rooms: Res<AllRooms>,
     stateinfo: Res<StateInfo>,
     time: Res<Time>,
