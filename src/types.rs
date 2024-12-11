@@ -19,12 +19,11 @@ pub const CAMERA_DECAY_RATE: f32 = 2.;
 pub struct StateInfo{
     pub room_idx: Option<usize>,
     pub camera_target: usize,
-    pub trace_only: bool,
     pub seq: bool,
 }
 impl StateInfo {
     pub fn new() -> StateInfo {
-        StateInfo{camera_target:0,trace_only:true,seq:true,room_idx:None,}
+        StateInfo{camera_target:0,seq:true,room_idx:None,}
     }
     pub fn p1_loaded(guards:&AllGuards) -> bool {
         ! guards.is_empty()

@@ -47,6 +47,7 @@ pub fn setup_menu(mut commands: Commands) {
 pub fn menu(
     mut next_state: ResMut<NextState<AppState>>,
     state: Res<State<AppState>>,
+    rooms: Res<AllRooms>,
     mut interaction_query: Query<
         (&Interaction, &mut BackgroundColor),
         (Changed<Interaction>, With<Button>),
@@ -54,6 +55,9 @@ pub fn menu(
     stateinfo: Res<StateInfo>,
     mut button_text: Query<&mut Text, With<StateButtonText>>
 ) {
+    let p2loaded = if let Some((room, guards)) = rooms.get_room(stateinfo.room_idx) {
+        StateInfo::p2_loaded(room, guards)
+    } else { false };
     for (interaction, mut color) in &mut interaction_query {
         for mut text in &mut button_text {
             *text = Text::new(match state.get() {
@@ -66,7 +70,11 @@ pub fn menu(
                     *color = PRESSED_BUTTON.into();
                     match state.get() {
                         AppState::InputScreen => next_state.set(AppState::Part1),
-                        AppState::Part1 => next_state.set(AppState::Part2),
+                        AppState::Part1 => {
+                            if p2loaded {
+                                next_state.set(AppState::Part2)
+                            }
+                        },
                         AppState::Part2 => next_state.set(AppState::InputScreen),
                     }
                 }

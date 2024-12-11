@@ -63,9 +63,7 @@ fn load_room(
     };
     let Ok(filecontents) = crate::part1and2::read_file(&filepath) else { panic!("TESTFILEFAIL AOC_INPUT NOT SET") };
 
-    let Ok((board, guard1, visited)) = crate::part1and2::part1(filecontents) else {
-        panic!("Invalid room!!!");
-    };
+    let Ok((board, guard1, visited)) = crate::part1and2::part1(filecontents) else { panic!("Invalid room!!!"); };
 
     let mut guards = AllGuards::new();
     guards.push(guard1.clone());
@@ -78,10 +76,17 @@ fn load_room(
 fn room_setup(
     mut commands: Commands,
     rooms: Res<AllRooms>,
-    stateinfo: Res<StateInfo>,
+    mut stateinfo: ResMut<StateInfo>,
+    state: Res<State<AppState>>,    
     asset_server: Res<AssetServer>,
 ) {
     let Some((room, guards)) = rooms.get_room(stateinfo.room_idx) else { return; };
+    if *state.get() == AppState::Part1 && stateinfo.camera_target != 0 {
+        stateinfo.camera_target = 0;
+    }
+    if *state.get() == AppState::Part2 && stateinfo.camera_target == 0 {
+        stateinfo.camera_target = 1;
+    }
     for (x, row) in room.iter().enumerate() {
         for (y, cell) in row.iter().enumerate() {
             let sprite = match cell {
