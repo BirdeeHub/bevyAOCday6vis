@@ -1,68 +1,61 @@
 use std::io::{self};
+use std::fs::File;
+use std::io::Read;
 
 use crate::types::*;
 
-pub fn run(filepath: &str) -> io::Result<(Room, CheckTrails)> {
-    let room = Room::from_file(filepath, "OG_ROOM".to_string())?;
-
-    let mut board = room.clone();
-    let boardx = board.len();
-    let boardy = board[0].len();
-    if check_for_loop(&mut board, boardx, boardy).is_some() {
-        return Err(io::Error::new(io::ErrorKind::InvalidData, "Board has loop in initial state!"));
-    };
-    
-    let visited = board.iter().flat_map(|row| row.iter()).filter(|&cell| cell == &RoomSpace::Visited).count();
-
-    let mut chktrails = CheckTrails::new();
-
-    let mut obstacles = Vec::new();
-    let trlclone = board.trail.clone();
-    let tocheck = deduplicate_vec(trlclone.iter().map(|(_,pos)|pos).collect());
-    for (i,(x,y)) in tocheck.iter().enumerate().skip(1) {
-        println!("{} / {}",i,trlclone.len()-1);
-        let mut newroom = room.clone();
-        if let Some(obs) = check_for_loop(&mut newroom, *x,*y) {
-            obstacles.push(obs);
-        }
-        newroom.reset();
-        chktrails.push(((*x,*y),newroom.trail));
-    }
-    obstacles = deduplicate_vec(obstacles);
-
-    println!("Part 1: total visited: {}", visited);
-
-    println!("Part 2: possible obstacle locations for loop: {:?}",obstacles.len());
-
-    board.reset();
-    Ok((board,chktrails))
+pub fn read_file(file_path: &str) -> io::Result<String> {
+    let mut contents = String::new();
+    File::open(file_path)?.read_to_string(&mut contents)?;
+    Ok(contents)
 }
 
-fn check_for_loop(room: &mut Room, obsx: usize, obsy: usize) -> Option<(usize,usize)> {
+pub fn part1(input: String) -> (Room,Guard,usize) {
+    let mut board = Room::from_string(input);
+    let boardx = board.len();
+    let boardy = board[0].len();
+    let mut trail = Trail::new();
+    let is_loop = check_for_loop(&mut board, &mut trail, false, boardx, boardy);
+    let mut to_check = deduplicate_vec(trail.clone().iter().map(|(_,pos)|pos.clone()).collect());
+    to_check.remove(0);
+    let visited = board.iter().flat_map(|row| row.iter()).filter(|&cell| cell == &RoomSpace::Visited).count();
+    board.reset();
+    board.to_check = to_check;
+    return (board, Guard::new(trail.clone(),None,is_loop,0),visited);
+}
+
+pub fn part2(room: &Room, initial_path_is_loop: bool, obsx: usize, obsy: usize, index: usize) -> Guard {
+    let mut newroom = room.clone();
+    let mut trail = Trail::new();
+    let is_loop = check_for_loop(&mut newroom, &mut trail, initial_path_is_loop, obsx,obsy);
+    Guard::new(trail, Some((obsx, obsy)), is_loop, index) 
+}
+
+fn check_for_loop(room: &mut Room, trail: &mut Trail, initial_path_is_loop: bool, obsx: usize, obsy: usize) -> bool {
     if obsx < room.len() && obsy < room[0].len() {
         if room[obsx][obsy] == RoomSpace::Obstacle {
-            return None;
+            return initial_path_is_loop;
         }
         room.add_obstacle(obsx,obsy);
     }
     let mut continue_moving = true;
     let mut checkpoints = Vec::new();
     while continue_moving {
-        continue_moving = move_guard(room);
-        if continue_moving && checkpoints.contains(room.trail.last().unwrap()) {
-            return Some((obsx,obsy))
+        continue_moving = move_guard(room, trail);
+        if continue_moving && checkpoints.contains(trail.last().unwrap()) {
+            return true;
         }
         if continue_moving {
-            checkpoints.push(room.trail.last().unwrap().clone());
+            checkpoints.push(trail.last().unwrap().clone());
         }
     }
-    None
+    false
 }
 
-fn move_guard(room: &mut Room) -> bool {
+fn move_guard(room: &mut Room, trail: &mut Trail) -> bool {
     if let Some((direction,guard_pos)) = room.find_guard() {
         room.visit_space(guard_pos.0,guard_pos.1);
-        room.trail.push((direction.clone(),guard_pos));
+        trail.push((direction.clone(),guard_pos));
         if let Some((dir,newspace)) = get_newspace_with_obstacle(room, guard_pos, &direction) {
             if dir == direction {
                 room.add_guard(newspace.0,newspace.1,&dir);
@@ -116,7 +109,7 @@ fn turn_right(direction: &Direction) -> Direction {
     }
 }
 
-fn deduplicate_vec<T: Eq + std::hash::Hash>(vec: Vec<T>) -> Vec<T> {
+pub fn deduplicate_vec<T: Eq + std::hash::Hash>(vec: Vec<T>) -> Vec<T> {
     let mut result = Vec::new();
     for item in vec {
         if !result.contains(&item) {

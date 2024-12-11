@@ -1,13 +1,24 @@
 use bevy::prelude::*;
-use std::fmt::{Display, Formatter};
-use std::path::Path;
 use std::ops::{Deref, DerefMut};
-use std::time::Duration;
-use std::thread;
-use std::fs::File;
-use std::io::{self, BufRead, BufReader};
 
-#[derive(Debug, PartialEq, Clone)]
+pub const CELL_SIZE: f32 = 20.0; // Define cell size in pixels
+pub const SCALE_FACTOR: f32 = 1.0; // Scaling factor for cell size
+pub const OFFSET_X: f32 = -500.0; // Offset to move the grid horizontally
+pub const OFFSET_Y: f32 = 500.0; // Offset to move the grid vertically
+
+pub const NORMAL_BUTTON: Color = Color::srgb(0.15, 0.15, 0.15);
+pub const HOVERED_BUTTON: Color = Color::srgb(0.25, 0.25, 0.25);
+pub const PRESSED_BUTTON: Color = Color::srgb(0.35, 0.75, 0.35);
+// Adjust the size and position
+pub const SCALED_CELL_SIZE: f32 = CELL_SIZE * SCALE_FACTOR;
+
+/// How quickly should the camera snap to the desired location.
+pub const CAMERA_DECAY_RATE: f32 = 2.;
+
+#[derive(Resource,Clone, Copy, PartialEq)]
+pub struct CameraTarget(pub usize);
+
+#[derive(Debug, PartialEq, Clone, Hash, Eq)]
 pub enum Direction {
     Up,
     Down,
@@ -23,50 +34,27 @@ pub enum RoomSpace {
     Empty,
 }
 
-impl Display for RoomSpace {
-    fn fmt(&self, fmt:&mut Formatter) -> Result<(), std::fmt::Error> {
-        fmt.write_str(match self {
-            RoomSpace::Guard(dir) => match dir {
-                Direction::Up => "^",
-                Direction::Down => "v",
-                Direction::Left => "<",
-                Direction::Right => ">",
-            },
-            RoomSpace::Obstacle => "#",
-            RoomSpace::Visited => ".",
-            RoomSpace::Empty => " ",
-        })
-    }
-}
-
 #[derive(Debug, PartialEq, Resource, Clone)]
 pub struct Room {
-    pub name: String,
-    trail_idx: usize,
     grid: Vec<Vec<RoomSpace>>,
-    pub trail: Trail,
+    pub to_check: Vec<(usize,usize)>,
 }
 
 impl Room {
-    pub fn new(name: String, trail: Option<Trail>) -> Room {
-        if let Some(trail) = trail {
-            Room{name, trail_idx: 0, trail: trail.clone(), grid: Vec::new()}
-        } else {
-            Room{name, trail_idx: 0, trail: Trail::new(), grid: Vec::new()}
-        }
+    pub fn new() -> Room {
+        Room{to_check: Vec::new(), grid: Vec::new()}
     }
-    pub fn from_file<P: AsRef<Path>>(filepath: P, name: String) -> io::Result<Room> {
-        let file = File::open(filepath)?;
-        let reader = BufReader::new(file);
-
+    pub fn from_string(input: String) -> Room {
         let mut rawout:Vec<Vec<RoomSpace>> = Vec::new();
 
-        for line in reader.lines() {
-            let line = line?;
+        for line in input.lines() {
             let mut row:Vec<RoomSpace> = Vec::new();
             for c in line.chars() {
                 row.push(match c {
                     '^' => RoomSpace::Guard(Direction::Up),
+                    '<' => RoomSpace::Guard(Direction::Left),
+                    '>' => RoomSpace::Guard(Direction::Right),
+                    'v' => RoomSpace::Guard(Direction::Down),
                     '#' => RoomSpace::Obstacle,
                     _ => RoomSpace::Empty,
                 });
@@ -74,18 +62,15 @@ impl Room {
             rawout.push(row);
         }
         // fix x and y...
-        let mut newroom = Room::new(name, None);
+        let mut newroom = Room::new();
         for i in 0..rawout[0].len() {
             let mut newrow = Vec::new();
             rawout.iter().for_each(|row|newrow.push(row[i].clone()));
             newroom.push(newrow);
         };
-        Ok(newroom)
+        newroom
     }
     pub fn reset(&mut self) {
-        // Reset the trail index
-        self.trail_idx = 0;
-
         // Iterate through the grid and reset RoomSpace values
         for row in &mut self.grid {
             for cell in row {
@@ -96,44 +81,6 @@ impl Room {
                 };
             }
         }
-
-        if self.trail.first().is_some() {
-            let (dir,(x,y)) = self.trail[0].clone();
-            self.add_guard(x,y,&dir);
-        }
-    }
-    pub fn retreat(&mut self) -> Option<(Direction,(usize,usize))> {
-        if self.trail.get(self.trail_idx).is_some() && self.trail_idx > 0 {
-            let pos = self.trail[self.trail_idx].clone();
-            self[pos.1.0][pos.1.1] = RoomSpace::Empty;
-            self.trail_idx -= 1;
-            let pos = self.trail[self.trail_idx].clone();
-            self.add_guard(pos.1.0,pos.1.1,&pos.0);
-            Some(pos)
-        } else { None }
-    }
-    pub fn advance(&mut self) -> Option<(Direction,(usize,usize))> {
-        if self.trail.get(self.trail_idx).is_some() {
-            let pos = self.trail[self.trail_idx].clone();
-            self.trail_idx += 1;
-            if self.trail.get(self.trail_idx).is_some() {
-                self.visit_space(pos.1.0,pos.1.1);
-                let (dir,(x,y)) = self.trail[self.trail_idx].clone();
-                self.add_guard(x,y,&dir);
-                Some((dir,(x,y)))
-            } else {
-                Some(pos)
-            }
-        } else {
-            None
-        }
-    }
-    pub fn get_current_trail(&mut self) -> Trail {
-        let mut ret = Trail::new();
-        for i in 0..self.trail_idx {
-            ret.push(self.trail[i].clone());
-        }
-        ret
     }
     pub fn add_obstacle(&mut self, x:usize, y:usize) {
         self[x][y] = RoomSpace::Obstacle;
@@ -143,19 +90,6 @@ impl Room {
     }
     pub fn visit_space(&mut self, x:usize, y:usize) {
         self[x][y] = RoomSpace::Visited;
-    }
-    pub fn get_guard_loc(&self) -> Option<(Direction,(usize,usize))> {
-        if let Some((dir,(x,y))) = self.trail.get(self.trail_idx) {
-            Some((dir.clone(),(*x,*y)))
-        } else if self.trail_idx >= self.trail.len() {
-            if let Some(ret) = self.trail.last() {
-                Some(ret.clone())
-            } else {
-                None
-            }
-        } else {
-            None
-        }
     }
     pub fn find_guard(&self) -> Option<(Direction,(usize,usize))> {
         for (i, _) in self.iter().enumerate() {
@@ -169,11 +103,6 @@ impl Room {
             }
         }
         None
-    }
-    #[allow(dead_code)]
-    pub fn print(&self, delay:u64) {
-        thread::sleep(Duration::from_millis(delay));
-        println!("{}", self);
     }
 }
 
@@ -191,32 +120,7 @@ impl DerefMut for Room {
     }
 }
 
-impl Display for Room {
-    fn fmt(&self, fmt:&mut Formatter) -> Result<(), std::fmt::Error> {
-        if self.is_empty() {
-            return fmt.write_str("");
-        }
-        let mut resultstr = String::new();
-        resultstr.push_str(&"-".repeat(self[0].len()));
-        resultstr.push('\n');
-
-        let num_cols = self.len();
-        let num_rows = self[0].len();
-
-        for col in 0..num_rows {
-            let row: String = (0..num_cols)
-                .map(|row| self[row][col].to_string())
-                .collect();
-                resultstr.push_str(&row);
-                resultstr.push('\n');
-        }
-        resultstr.push_str(&"-".repeat(self[0].len()));
-        resultstr.push('\n');
-        fmt.write_str(&resultstr)
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Resource)]
+#[derive(Debug, PartialEq, Clone, Hash, Eq)]
 pub struct Trail(Vec<(Direction,(usize,usize))>);
 
 impl Trail {
@@ -240,24 +144,115 @@ impl DerefMut for Trail {
 }
 
 #[derive(Debug, PartialEq, Clone, Resource)]
-pub struct CheckTrails(Vec<((usize,usize),Trail)>);
+pub struct AllGuards(pub Vec<Guard>);
 
-impl CheckTrails {
-    pub fn new() -> CheckTrails {
-        CheckTrails(Vec::new())
+impl AllGuards {
+    pub fn new() -> AllGuards {
+        AllGuards(Vec::new())
     }
 }
 
-impl Deref for CheckTrails {
-    type Target = Vec<((usize,usize),Trail)>;
+impl Deref for AllGuards {
+    type Target = Vec<Guard>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl DerefMut for CheckTrails {
+impl DerefMut for AllGuards {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
+pub enum AppState {
+    #[default]
+    InputScreen,
+    Part1,
+    Part2
+}
+
+// Components to represent Room elements visually.
+#[derive(Component)]
+pub struct Space {
+    pub x: usize,
+    pub y: usize,
+}
+
+#[derive(Resource)]
+pub struct MoveTimer(pub Timer);
+
+#[derive(Component, Debug, PartialEq, Hash, Eq, Clone)]
+pub struct Guard {
+    pub trail: Trail,
+    pub obstacle: Option<(usize, usize)>,
+    pub is_loop: bool,
+    pub trail_idx: usize,
+    pub display_index: usize,
+}
+
+impl Guard {
+    pub fn new(trail: Trail, obstacle: Option<(usize,usize)>, is_loop: bool, display_index: usize) -> Guard {
+        Guard { trail, obstacle, is_loop, trail_idx: 0, display_index, }
+    }
+    pub fn retreat(&mut self) -> Option<(Direction,(usize,usize))> {
+        if self.trail.get(self.trail_idx).is_some() && self.trail_idx > 0 {
+            self.trail_idx -= 1;
+            let pos = self.trail[self.trail_idx].clone();
+            Some(pos)
+        } else { None }
+    }
+    pub fn advance(&mut self) -> Option<(Direction,(usize,usize))> {
+        if self.trail.get(self.trail_idx).is_some() {
+            let pos = self.trail[self.trail_idx].clone();
+            self.trail_idx += 1;
+            if self.trail.get(self.trail_idx).is_some() {
+                let (dir,(x,y)) = self.trail[self.trail_idx].clone();
+                Some((dir,(x,y)))
+            } else {
+                Some(pos)
+            }
+        } else {
+            None
+        }
+    }
+    pub fn get_current_trail(&mut self) -> Trail {
+        let mut ret = Trail::new();
+        for i in 0..self.trail_idx {
+            ret.push(self.trail[i].clone());
+        }
+        ret
+    }
+    pub fn get_loc(&self) -> Option<(Direction,(usize,usize))> {
+        if let Some((dir,(x,y))) = self.trail.get(self.trail_idx) {
+            Some((dir.clone(),(*x,*y)))
+        } else if self.trail_idx >= self.trail.len() {
+            if let Some(ret) = self.trail.last() {
+                Some(ret.clone())
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+    pub fn reset(&mut self) {
+        self.trail_idx = 0;
+    }
+}
+
+#[derive(Component)]
+pub struct GridEntity;
+
+#[derive(Component)]
+pub struct TrailEntity {
+    index: usize,
+}
+
+impl TrailEntity {
+    pub fn new(index: usize) -> TrailEntity {
+        TrailEntity{index}
     }
 }

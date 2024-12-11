@@ -1,28 +1,14 @@
 use std::io::Result;
 use std::env;
 use bevy::prelude::*;
-use bevy::time::*;
 mod part1and2;
 mod types;
 mod asset;
+mod buttons;
 
 use crate::types::*;
 
 use crate::asset::{EmbeddedPlug, get_guard_sprite};
-
-const CELL_SIZE: f32 = 20.0; // Define cell size in pixels
-const SCALE_FACTOR: f32 = 1.0; // Scaling factor for cell size
-const OFFSET_X: f32 = -500.0; // Offset to move the grid horizontally
-const OFFSET_Y: f32 = 500.0; // Offset to move the grid vertically
-
-const NORMAL_BUTTON: Color = Color::srgb(0.15, 0.15, 0.15);
-const HOVERED_BUTTON: Color = Color::srgb(0.25, 0.25, 0.25);
-const PRESSED_BUTTON: Color = Color::srgb(0.35, 0.75, 0.35);
-// Adjust the size and position
-const SCALED_CELL_SIZE: f32 = CELL_SIZE * SCALE_FACTOR;
-
-/// How quickly should the camera snap to the desired location.
-const CAMERA_DECAY_RATE: f32 = 2.;
 
 fn main() -> Result<()> {
     // Get the Room and trails from your logic
@@ -31,50 +17,41 @@ fn main() -> Result<()> {
         Some(filepath_arg) => filepath_arg.to_string(),
         _ => env::var("AOC_INPUT").expect("AOC_INPUT not set")
     };
-    let (room, chktrails) = part1and2::run(&filepath)?;
-    let testroom = room.clone();
-    let checktrails = chktrails.clone();
+    let filecontents = crate::part1and2::read_file(&filepath)?;
+
+    let (board, guard1, visited) = crate::part1and2::part1(filecontents);
+
+    let mut guards = AllGuards::new();
+    guards.push(guard1.clone());
+
+    for (i,(x,y)) in board.to_check.iter().enumerate() {
+        println!("{} / {}",i,board.to_check.len());
+        guards.push(crate::part1and2::part2(&mut board.clone(), guard1.is_loop, *x,*y, i));
+    }
+    let obstacles = crate::part1and2::deduplicate_vec(guards.iter().filter(|v|v.is_loop).collect()).len();
+
+    println!("Part 1: total visited: {}", visited);
+
+    println!("Part 2: possible obstacle locations for loop: {:?}",obstacles);
 
     // Initialize Bevy App
     let mut app = App::new();
     app.add_plugins(DefaultPlugins) // Default plugins for window and rendering
         .add_plugins(EmbeddedPlug)
         .init_state::<AppState>()
-        .insert_resource(testroom) // Insert Room as a resource to access in systems
-        .insert_resource(checktrails) // Insert Room as a resource to access in systems
+        .insert_resource(board) // Insert Room as a resource to access in systems
+        .insert_resource(guards)
+        .insert_resource(CameraTarget(0))
         .insert_resource(MoveTimer(Timer::from_seconds(0.05, TimerMode::Repeating))) // Add the timer resource
         .add_systems(Startup,(setup_camera,room_setup))
-        .add_systems(Startup,setup_menu)
-        .add_systems(Update,menu)
+        .add_systems(Startup,crate::buttons::setup_menu)
+        .add_systems(Update,crate::buttons::menu)
         .add_systems(OnEnter(AppState::Part1),guard_spawn)
         .add_systems(Update,(render_trail,move_guard,update_camera).chain().run_if(in_state(AppState::Part1))) // Set up camera
         .add_systems(OnExit(AppState::Part1),cleanup_p1)
         .run(); // Spawn Room entities
 
     Ok(())
-}
-
-// Components to represent Room elements visually.
-#[derive(Component)]
-struct Space {
-    x: usize,
-    y: usize,
-}
-
-#[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
-enum AppState {
-    #[default]
-    InputScreen,
-    Part1,
-    Part2
-}
-
-#[derive(Resource)]
-struct MoveTimer(Timer);
-
-#[derive(Component)]
-struct Guard {
-    pathindex: usize,
 }
 
 // Set up a 2D camera
@@ -84,29 +61,33 @@ fn setup_camera(mut commands: Commands) {
 
 fn update_camera(
     mut camera: Query<&mut Transform, (With<Camera2d>, Without<Guard>)>,
-    player: Query<&Transform, (With<Guard>, Without<Camera2d>)>,
+    target: Res<CameraTarget>,
+    guards: Query<(&Transform, &Guard), Without<Camera2d>>,
     time: Res<Time>,
 ) {
     let Ok(mut camera) = camera.get_single_mut() else {
         return;
     };
 
-    let Ok(player) = player.get_single() else {
-        return;
+    let mut guard = None;
+
+    for (e, g) in &guards {
+        if g.display_index == target.0 {
+            guard = Some(e);
+        }
     };
 
-    let Vec3 { x, y, .. } = player.translation;
-    let direction = Vec3::new(x, y, camera.translation.z);
+    if let Some(g) = guard {
+        let Vec3{ x, y, .. } = g.translation;
+        let direction = Vec3::new(x, y, camera.translation.z);
 
-    // Applies a smooth effect to camera movement using stable interpolation
-    // between the camera position and the player position on the x and y axes.
-    camera
-        .translation
-        .smooth_nudge(&direction, CAMERA_DECAY_RATE, time.delta_secs());
+        // Applies a smooth effect to camera movement using stable interpolation
+        // between the camera position and the player position on the x and y axes.
+        camera
+            .translation
+            .smooth_nudge(&direction, CAMERA_DECAY_RATE, time.delta_secs());
+    }
 }
-
-#[derive(Component)]
-struct GridEntity;
 
 fn room_setup(
     mut commands: Commands,
@@ -156,32 +137,26 @@ fn room_setup(
 
 fn guard_spawn(
     mut commands: Commands,
-    mut room: ResMut<Room>, // Access to the room to modify it
+    mut room: Res<Room>, // Access to the room to modify it
+    mut guards: ResMut<AllGuards>,
+    mut state: Res<State<AppState>>,
     asset_server: Res<AssetServer>,
 ) {
-    if let Some((dir,(x,y))) = room.get_guard_loc() {
-        commands.spawn((
-            Sprite::from_image(asset_server.load(get_guard_sprite(&dir,1))),
-            Transform::from_translation(Vec3::new(
-                x as f32 * SCALED_CELL_SIZE + OFFSET_X,
-                y as f32 * -SCALED_CELL_SIZE + OFFSET_Y, // Use -scaled_cell_size for inverted Y
-                2.0,
-            )),
-            Visibility::default(),
-            Guard { pathindex: 0, },
-            GridEntity, // Tag the entity
-        ));
-    }
-}
-
-#[derive(Component)]
-struct TrailEntity {
-    index: usize,
-}
-
-impl TrailEntity {
-    fn new(index: usize) -> TrailEntity {
-        TrailEntity{index}
+    for guard in &guards.0 {
+        if let Some((dir,(x,y))) = guard.get_loc() {
+            commands.spawn((
+                Sprite::from_image(asset_server.load(get_guard_sprite(&dir,1))),
+                Transform::from_translation(Vec3::new(
+                    x as f32 * SCALED_CELL_SIZE + OFFSET_X,
+                    y as f32 * -SCALED_CELL_SIZE + OFFSET_Y, // Use -scaled_cell_size for inverted Y
+                    2.0,
+                )),
+                Visibility::default(),
+                guard.clone(),
+                GridEntity, // Tag the entity
+            ));
+        }
+        if *state.get() != AppState::Part2 { break; }
     }
 }
 
@@ -261,85 +236,6 @@ fn render_trail(
                     TrailEntity::new(i),
                     GridEntity, // Tag the entity
                 ));
-            }
-        }
-    }
-}
-
-#[derive(Component)]
-struct StateButtonText;
-fn setup_menu(mut commands: Commands) {
-    let button_entity = commands
-        .spawn(Node {
-            // center button
-            width: Val::Vw(100.),
-            height: Val::Vh(100.),
-            border: UiRect::axes(Val::Vw(5.), Val::Vh(5.)),
-            justify_content: JustifyContent::End,
-            align_items: AlignItems::Start,
-            ..default()
-        })
-        .with_children(|parent| {
-            parent
-                .spawn((
-                    Button,
-                    Node {
-                        width: Val::Px(150.),
-                        height: Val::Px(65.),
-                        // horizontally center child text
-                        justify_content: JustifyContent::Center,
-                        // vertically center child text
-                        align_items: AlignItems::Center,
-                        ..default()
-                    },
-                    BackgroundColor(NORMAL_BUTTON),
-                ))
-                .with_children(|parent| {
-                    parent.spawn((
-                        Text::new("Input"),
-                        TextFont {
-                            font_size: 33.0,
-                            ..default()
-                        },
-                        TextColor(Color::srgb(0.9, 0.9, 0.9)),
-                        StateButtonText,
-                    ));
-                });
-        })
-        .id();
-}
-
-fn menu(
-    mut next_state: ResMut<NextState<AppState>>,
-    mut state: ResMut<State<AppState>>,
-    mut interaction_query: Query<
-        (&Interaction, &mut BackgroundColor),
-        (Changed<Interaction>, With<Button>),
-    >,
-    mut button_text: Query<&mut Text, With<StateButtonText>>
-) {
-    for (interaction, mut color) in &mut interaction_query {
-        for mut text in &mut button_text {
-            *text = Text::new(match state.get() {
-                AppState::InputScreen => "Part 1",
-                AppState::Part1 => "Part 2",
-                AppState::Part2 => "Input",
-            });
-            match *interaction {
-                Interaction::Pressed => {
-                    *color = PRESSED_BUTTON.into();
-                    match state.get() {
-                        AppState::InputScreen => next_state.set(AppState::Part1),
-                        AppState::Part1 => next_state.set(AppState::Part2),
-                        AppState::Part2 => next_state.set(AppState::InputScreen),
-                    }
-                }
-                Interaction::Hovered => {
-                    *color = HOVERED_BUTTON.into();
-                }
-                Interaction::None => {
-                    *color = NORMAL_BUTTON.into();
-                }
             }
         }
     }
