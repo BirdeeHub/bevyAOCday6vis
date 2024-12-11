@@ -78,7 +78,7 @@ fn room_setup(
     state: Res<State<AppState>>,    
     asset_server: Res<AssetServer>,
 ) {
-    let Some((room, guards)) = rooms.get_room(stateinfo.room_idx) else { return; };
+    let Some((room, _)) = rooms.get_room(stateinfo.room_idx) else { return; };
     if *state.get() == AppState::Part1 && stateinfo.camera_target != 0 {
         stateinfo.camera_target = 0;
     }
@@ -141,16 +141,11 @@ fn guard_spawn(
 }
 
 fn move_guard(
-    commands: Commands,
-    rooms: Res<AllRooms>,
-    stateinfo: Res<StateInfo>,
     time: Res<Time>,
-    state: Res<State<AppState>>,
     asset_server: Res<AssetServer>,
-    mut guardquery: Query<(Entity, &mut Transform, &mut Sprite, &mut Guard)>,
+    mut guardquery: Query<(&mut Transform, &mut Sprite, &mut Guard)>,
 ) {
-    let Some((room, guards)) = rooms.get_room(stateinfo.room_idx) else { return; };
-    for (entity, mut tform, mut sprite, guard) in &mut guardquery {
+    for (mut tform, mut sprite, guard) in &mut guardquery {
         if let Some((dir,(x,y))) = guard.get_loc() {
             let mut direction = Vec3::ZERO;
             direction.x = (x as f32 * SCALED_CELL_SIZE + OFFSET_X) - tform.translation.x;
@@ -167,15 +162,14 @@ fn render_trail(
     mut commands: Commands,
     time: Res<Time>,
     mut timer: ResMut<MoveTimer>,
-    asset_server: Res<AssetServer>,
     mut rooms: ResMut<AllRooms>,
     stateinfo: Res<StateInfo>,
     querytrail: Query<(Entity, &TrailEntity)>,
-    mut guardquery: Query<(Entity, &mut Guard)>,
+    mut guardquery: Query<&mut Guard>,
 ) {
     let Some((room, guards)) = rooms.get_room_mut(stateinfo.room_idx) else { return; };
     if timer.0.tick(time.delta()).just_finished() && StateInfo::p1_loaded(&guards) && StateInfo::p2_loaded(&room,&guards) {
-        for (entity, mut guard) in guardquery.iter_mut() {
+        for mut guard in guardquery.iter_mut() {
             guard.advance();
             let mut final_idx = 0;
             let mut has_zero = false;
@@ -190,7 +184,7 @@ fn render_trail(
                 }
             }
             if !has_zero {
-                if let Some((dir,(x,y))) = guard.trail.get(0) {
+                if let Some((_,(x,y))) = guard.trail.get(0) {
                     commands.spawn((
                         Sprite {
                             color: Color::srgb(0.0, 1.0, 0.0), // Green
@@ -208,7 +202,7 @@ fn render_trail(
                 }
             }
             for i in (final_idx+1)..guard.get_current_trail().len() {
-                if let Some((dir,(x,y))) = guard.trail.get(i) {
+                if let Some((_,(x,y))) = guard.trail.get(i) {
                     commands.spawn((
                         Sprite {
                             color: Color::srgb(0.0, 1.0, 0.0), // Green
