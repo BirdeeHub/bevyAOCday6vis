@@ -45,7 +45,6 @@ fn calc_room(
             println!("{} / {}",i,room.to_check.len());
             guards.push(crate::part1and2::part2(&mut room.clone(), init_is_loop, *x,*y, i+1));
         }
-        println!("{:?}",guards);
         let obstacles = crate::part1and2::deduplicate_vec(guards.iter().filter(|v|v.is_loop).collect()).len();
         println!("Part 2: possible obstacle locations for loop: {:?}",obstacles);
     }
