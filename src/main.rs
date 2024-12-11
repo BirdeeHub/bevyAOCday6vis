@@ -116,7 +116,7 @@ fn guard_spawn(
     asset_server: Res<AssetServer>,
 ) {
     let Some((room, guards)) = rooms.get_room(stateinfo.room_idx) else { return; };
-    if ! StateInfo::p1_loaded(&guards) || ! StateInfo::p2_loaded(&room,&guards) { return; }
+    if ! StateInfo::p1_loaded(&guards) && ! StateInfo::p2_loaded(&room,&guards) { return; }
     for guard in &guards.0 {
         if let Some((dir,(x,y))) = guard.get_loc() {
             commands.spawn((
@@ -139,12 +139,12 @@ fn move_guard(
     rooms: Res<AllRooms>,
     stateinfo: Res<StateInfo>,
     time: Res<Time>,
-    mut state: Res<State<AppState>>,
+    state: Res<State<AppState>>,
     asset_server: Res<AssetServer>,
     mut guardquery: Query<(Entity, &mut Transform, &mut Sprite, &mut Guard)>,
 ) {
     let Some((room, guards)) = rooms.get_room(stateinfo.room_idx) else { return; };
-    if ! StateInfo::p1_loaded(&guards) || ! StateInfo::p2_loaded(&room,&guards) { return; }
+    if ! StateInfo::p1_loaded(&guards) && ! StateInfo::p2_loaded(&room,&guards) { return; }
     for (entity, mut tform, mut sprite, guard) in &mut guardquery {
         if let Some((dir,(x,y))) = guard.get_loc() {
             let mut direction = Vec3::ZERO;
@@ -160,63 +160,65 @@ fn move_guard(
 
 fn render_trail(
     mut commands: Commands,
-    mut rooms: ResMut<AllRooms>,
     time: Res<Time>,
     mut timer: ResMut<MoveTimer>,
     asset_server: Res<AssetServer>,
-    querytrail: Query<(Entity, &TrailEntity)>,
+    mut rooms: ResMut<AllRooms>,
     stateinfo: Res<StateInfo>,
-    mut state: Res<State<AppState>>,
-    mut guardquery: Query<(Entity, &mut Transform, &mut Guard)>,
+    querytrail: Query<(Entity, &TrailEntity)>,
+    mut guardquery: Query<(Entity, &mut Guard)>,
 ) {
     let Some((room, guards)) = rooms.get_room_mut(stateinfo.room_idx) else { return; };
     if timer.0.tick(time.delta()).just_finished() && StateInfo::p1_loaded(&guards) && StateInfo::p2_loaded(&room,&guards) {
-        if *state == AppState::InputScreen { return; }
-        room.advance();
-        let mut final_idx = 0;
-        let mut has_zero = false;
-        for (entity, trailidx) in querytrail.iter() {
-            if let Some(_) = room.trail.get(trailidx.index) {
-                if trailidx.index == 0 { has_zero = true; }
-                final_idx = trailidx.index;
-            } else {
-                commands.entity(entity).despawn();
+        for (entity, mut guard) in guardquery.iter_mut() {
+            guard.advance();
+            let mut final_idx = 0;
+            let mut has_zero = false;
+            for (entity, trailidx) in querytrail.iter() {
+                if trailidx.guard_index == guard.display_index {
+                    if let Some(_) = guard.trail.get(trailidx.index) {
+                        if trailidx.index == 0 { has_zero = true; }
+                        final_idx = trailidx.index;
+                    } else {
+                        commands.entity(entity).despawn();
+                    }
+                }
             }
-        }
-        if !has_zero {
-            if let Some((dir,(x,y))) = room.trail.get(0) {
-                commands.spawn((
-                    Sprite {
-                        color: Color::srgb(0.0, 1.0, 0.0), // Green
-                        custom_size: Some(Vec2::new(SCALED_CELL_SIZE/2., SCALED_CELL_SIZE/2.)),
-                        ..default()
-                    },
-                    Transform::from_translation(Vec3::new(
-                        *x as f32 * SCALED_CELL_SIZE + OFFSET_X,
-                        *y as f32 * -SCALED_CELL_SIZE + OFFSET_Y,
-                        1.0,
-                    )),
-                    Visibility::default(),
-                    TrailEntity::new(0),
-                ));
+            if !has_zero {
+                if let Some((dir,(x,y))) = guard.trail.get(0) {
+                    commands.spawn((
+                        Sprite {
+                            color: Color::srgb(0.0, 1.0, 0.0), // Green
+                            custom_size: Some(Vec2::new(SCALED_CELL_SIZE/2., SCALED_CELL_SIZE/2.)),
+                            ..default()
+                        },
+                        Transform::from_translation(Vec3::new(
+                            *x as f32 * SCALED_CELL_SIZE + OFFSET_X,
+                            *y as f32 * -SCALED_CELL_SIZE + OFFSET_Y,
+                            1.0,
+                        )),
+                        Visibility::default(),
+                        TrailEntity::new(0, guard.display_index),
+                    ));
+                }
             }
-        }
-        for i in (final_idx+1)..room.get_current_trail().len() {
-            if let Some((dir,(x,y))) = room.trail.get(i) {
-                commands.spawn((
-                    Sprite {
-                        color: Color::srgb(0.0, 1.0, 0.0), // Green
-                        custom_size: Some(Vec2::new(SCALED_CELL_SIZE/2., SCALED_CELL_SIZE/2.)),
-                        ..default()
-                    },
-                    Transform::from_translation(Vec3::new(
-                        *x as f32 * SCALED_CELL_SIZE + OFFSET_X,
-                        *y as f32 * -SCALED_CELL_SIZE + OFFSET_Y,
-                        1.0,
-                    )),
-                    Visibility::default(),
-                    TrailEntity::new(i),
-                ));
+            for i in (final_idx+1)..guard.get_current_trail().len() {
+                if let Some((dir,(x,y))) = guard.trail.get(i) {
+                    commands.spawn((
+                        Sprite {
+                            color: Color::srgb(0.0, 1.0, 0.0), // Green
+                            custom_size: Some(Vec2::new(SCALED_CELL_SIZE/2., SCALED_CELL_SIZE/2.)),
+                            ..default()
+                        },
+                        Transform::from_translation(Vec3::new(
+                            *x as f32 * SCALED_CELL_SIZE + OFFSET_X,
+                            *y as f32 * -SCALED_CELL_SIZE + OFFSET_Y,
+                            1.0,
+                        )),
+                        Visibility::default(),
+                        TrailEntity::new(i, guard.display_index),
+                    ));
+                }
             }
         }
     }
