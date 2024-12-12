@@ -90,7 +90,6 @@ fn spawn_calc_tasks(
                 command_queue.push(move |world: &mut World| {
                     let Some(mut allrooms) = world.get_resource_mut::<AllRooms>() else { return; };
                     let Some((_, ref mut guards)) = allrooms.get_room_mut(Some(index)) else { return; };
-                    //guards.insert(idx,newguard);
                     guards.push(newguard);
                 });
                 command_queue
