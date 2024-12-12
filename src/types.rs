@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use bevy::asset::*;
 use std::ops::{Deref, DerefMut};
+use std::fmt::{Display, Formatter};
 
 pub const CELL_SIZE: f32 = 20.0; // Define cell size in pixels
 pub const SCALE_FACTOR: f32 = 1.0; // Scaling factor for cell size
@@ -59,8 +60,8 @@ pub enum RoomError {
     ManyGuards,
     Uneven,
 }
-impl std::fmt::Display for RoomError {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl Display for RoomError {
+    fn fmt(&self, fmt: &mut Formatter) -> std::fmt::Result {
         fmt.write_str(match self {
             RoomError::NoGuards => "Room has no guards.",
             RoomError::ManyGuards => "Room has more than one guard.",
@@ -173,6 +174,38 @@ impl Deref for Room {
 impl DerefMut for Room {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.grid
+    }
+}
+
+impl Display for Room {
+    fn fmt(&self, fmt:&mut Formatter) -> std::fmt::Result {
+        let mut resultstr = String::new();
+        let num_cols = self.len();
+        let num_rows = self[0].len();
+        for col in 0..num_rows {
+            let row: String = (0..num_cols)
+                .map(|row| self[row][col].to_string())
+                .collect();
+                resultstr.push_str(&row);
+                resultstr.push('\n');
+        }
+        fmt.write_str(&resultstr)
+    }
+}
+
+impl Display for RoomSpace {
+    fn fmt(&self, fmt:&mut Formatter) -> std::fmt::Result {
+        fmt.write_str(match self {
+            RoomSpace::Guard(dir) => match dir {
+                Direction::Up => "^",
+                Direction::Down => "v",
+                Direction::Left => "<",
+                Direction::Right => ">",
+            },
+            RoomSpace::Obstacle => "#",
+            RoomSpace::Visited => ".",
+            RoomSpace::Empty => ".",
+        })
     }
 }
 
