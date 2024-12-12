@@ -32,7 +32,7 @@ fn main() -> Result<()> {
         .add_systems(OnEnter(AppState::Part1),(room_setup, guard_spawn).chain())
         .add_systems(Update,(render_trail,move_guard,crate::camera::update_camera).chain().run_if(in_state(AppState::Part1)))
         .add_systems(OnExit(AppState::Part1),(cleanup_guards, cleanup_room).chain())
-        .add_systems(OnEnter(AppState::Part2),(room_setup, guard_spawn).chain())
+        .add_systems(OnEnter(AppState::Part2),(room_setup, sort_guards, guard_spawn).chain())
         .add_systems(Update,(render_trail,move_guard,crate::camera::update_camera).chain().run_if(in_state(AppState::Part2)))
         .add_systems(OnExit(AppState::Part2),(cleanup_guards, cleanup_room).chain())
         .run();
@@ -119,7 +119,7 @@ fn room_setup(
     mut commands: Commands,
     rooms: Res<AllRooms>,
     mut stateinfo: ResMut<StateInfo>,
-    state: Res<State<AppState>>,    
+    state: Res<State<AppState>>,
     asset_server: Res<AssetServer>,
 ) {
     let Some((room, _)) = rooms.get_room(stateinfo.room_idx) else { return; };
@@ -204,28 +204,11 @@ fn render_trail(
     mut commands: Commands,
     time: Res<Time>,
     mut timer: ResMut<MoveTimer>,
-    mut rooms: ResMut<AllRooms>,
-    stateinfo: Res<StateInfo>,
-    querytrail: Query<(Entity, &TrailEntity)>,
     mut guardquery: Query<&mut Guard>,
 ) {
-    let Some((_, guards)) = rooms.get_room_mut(stateinfo.room_idx) else { return; };
-    if timer.0.tick(time.delta()).just_finished() && StateInfo::p1_loaded(&guards) {
+    if timer.0.tick(time.delta()).just_finished() {
         for mut guard in guardquery.iter_mut() {
-            guard.advance();
-            let mut final_idx = 0;
-            let mut has_zero = false;
-            for (entity, trailidx) in querytrail.iter() {
-                if trailidx.guard_index == guard.display_index {
-                    if let Some(_) = guard.trail.get(trailidx.index) {
-                        if trailidx.index == 0 { has_zero = true; }
-                        final_idx = trailidx.index;
-                    } else {
-                        commands.entity(entity).despawn();
-                    }
-                }
-            }
-            if !has_zero {
+            if guard.trail_idx == 0 {
                 if let Some((_,(x,y))) = guard.trail.get(0) {
                     commands.spawn((
                         Sprite {
@@ -239,27 +222,25 @@ fn render_trail(
                             1.0,
                         )),
                         Visibility::default(),
-                        TrailEntity::new(0, guard.display_index),
+                        TrailEntity::new(guard.display_index),
                     ));
                 }
             }
-            for i in (final_idx+1)..guard.get_current_trail().len() {
-                if let Some((_,(x,y))) = guard.trail.get(i) {
-                    commands.spawn((
-                        Sprite {
-                            color: Color::srgb(0.0, 1.0, 0.0), // Green
-                            custom_size: Some(Vec2::new(SCALED_CELL_SIZE/2., SCALED_CELL_SIZE/2.)),
-                            ..default()
-                        },
-                        Transform::from_translation(Vec3::new(
-                            *x as f32 * SCALED_CELL_SIZE,
-                            *y as f32 * -SCALED_CELL_SIZE,
-                            1.0,
-                        )),
-                        Visibility::default(),
-                        TrailEntity::new(i, guard.display_index),
-                    ));
-                }
+            if let Some((_,(x,y))) = guard.advance() {
+                commands.spawn((
+                    Sprite {
+                        color: Color::srgb(0.0, 1.0, 0.0), // Green
+                        custom_size: Some(Vec2::new(SCALED_CELL_SIZE/2., SCALED_CELL_SIZE/2.)),
+                        ..default()
+                    },
+                    Transform::from_translation(Vec3::new(
+                        x as f32 * SCALED_CELL_SIZE,
+                        y as f32 * -SCALED_CELL_SIZE,
+                        1.0,
+                    )),
+                    Visibility::default(),
+                    TrailEntity::new(guard.display_index),
+                ));
             }
         }
     }
@@ -277,5 +258,11 @@ fn cleanup_guards(mut commands: Commands, guard: Query<Entity, With<Guard>>, tra
     }
     for entity in trail.iter() {
         commands.entity(entity).despawn_recursive();
+    }
+}
+
+fn sort_guards(mut rooms: ResMut<AllRooms>) {
+    for (room, ref mut guards) in rooms.iter_mut() {
+        guards.sort_by_idx();
     }
 }

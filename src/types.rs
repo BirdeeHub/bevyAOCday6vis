@@ -282,13 +282,12 @@ pub struct GridEntity;
 
 #[derive(Component)]
 pub struct TrailEntity {
-    pub index: usize,
     pub guard_index: usize,
 }
 
 impl TrailEntity {
-    pub fn new(index: usize, guard_index: usize) -> TrailEntity {
-        TrailEntity{index, guard_index}
+    pub fn new(guard_index: usize) -> TrailEntity {
+        TrailEntity{guard_index}
     }
 }
 
