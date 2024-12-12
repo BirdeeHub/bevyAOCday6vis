@@ -85,9 +85,7 @@ fn spawn_calc_tasks(
             let task = thread_pool.spawn(async move {
                 let newguard = crate::part1and2::part2(&mut room, init_is_loop, obsx,obsy, idx);
                 println!("guard: {} / {}",idx,total);
-
                 let mut command_queue = CommandQueue::default();
-
                 // we use a raw command queue to pass a FnOnce(&mut World) back to be applied in a deferred manner.
                 command_queue.push(move |world: &mut World| {
                     let Some(mut allrooms) = world.get_resource_mut::<AllRooms>() else { return; };
@@ -95,7 +93,6 @@ fn spawn_calc_tasks(
                     //guards.insert(idx,newguard);
                     guards.push(newguard);
                 });
-
                 command_queue
             });
             commands.entity(entity).insert(ComputeTrails(task));
