@@ -40,6 +40,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+// TODO: make an input screen, make this happen conditionally when they do that
 fn load_room(
     mut allrooms: ResMut<AllRooms>,
     mut stateinfo: ResMut<StateInfo>,
