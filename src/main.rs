@@ -109,17 +109,10 @@ fn handle_calc_tasks(mut commands: Commands, mut transform_tasks: Query<(Entity,
         // Create a dummy waker for the current context
         let waker = futures::task::noop_waker();
         let mut context = Context::from_waker(&waker);
-        // Poll the future
-        let poll_result = poll_once(&mut task.0).poll(&mut context);
-        match poll_result {
-            Poll::Ready(Some(mut commands_queue)) => {
-                // If it's ready, process the commands
-                commands.append(&mut commands_queue);
-                commands.entity(entity).despawn();
-            }
-            _ => {
-                // If it's still pending, do nothing for now
-            }
+        if let Poll::Ready(Some(mut commands_queue)) = poll_once(&mut task.0).poll(&mut context) {
+            // If it's ready, process the commands
+            commands.append(&mut commands_queue);
+            commands.entity(entity).despawn();
         }
     }
 }
