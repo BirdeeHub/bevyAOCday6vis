@@ -127,20 +127,12 @@ fn room_setup(
     }
     for (x, row) in room.iter().enumerate() {
         for (y, cell) in row.iter().enumerate() {
-            let sprite = match cell {
-                RoomSpace::Obstacle => Sprite { // TODO: Randomized obstacle sprites
-                    color: Color::srgb(0.0, 0.0, 0.0), // Black
-                    custom_size: Some(Vec2::new(SCALED_CELL_SIZE, SCALED_CELL_SIZE)),
-                    ..default()
-                },
-                _ => Sprite {
+            commands.spawn((
+                Sprite {
                     color: Color::srgb(0.5, 0.5, 0.5), // Gray
                     custom_size: Some(Vec2::new(SCALED_CELL_SIZE, SCALED_CELL_SIZE)),
                     ..default()
                 },
-            };
-            commands.spawn((
-                sprite,
                 Transform::from_translation(Vec3::new(
                     x as f32 * SCALED_CELL_SIZE,
                     y as f32 * -SCALED_CELL_SIZE, // Use -scaled_cell_size for inverted Y
@@ -149,6 +141,20 @@ fn room_setup(
                 Visibility::default(),
                 Space{x,y},
             ));
+            if *cell == RoomSpace::Obstacle {
+                let mut obssprite = Sprite::from_image(asset_server.load(random_obstacle()));
+                obssprite.custom_size = Some(Vec2::new(SCALED_CELL_SIZE, SCALED_CELL_SIZE));
+                commands.spawn((
+                    obssprite,
+                    Transform::from_translation(Vec3::new(
+                        x as f32 * SCALED_CELL_SIZE,
+                        y as f32 * -SCALED_CELL_SIZE, // Use -scaled_cell_size for inverted Y
+                        0.1,
+                    )),
+                    Visibility::default(),
+                    Space{x,y},
+                ));
+            }
         }
     }
 }

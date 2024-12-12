@@ -412,5 +412,22 @@ impl Plugin for EmbeddedPlug {
         embedded_asset!(app, "sprites/Left2.png");
         embedded_asset!(app, "sprites/Left3.png");
         embedded_asset!(app, "fonts/FiraSans-Bold.ttf");
+        embedded_asset!(app, "sprites/Obstacle0.png");
+        embedded_asset!(app, "sprites/Obstacle1.png");
+        embedded_asset!(app, "sprites/Obstacle2.png");
+        embedded_asset!(app, "sprites/Obstacle3.png");
+        embedded_asset!(app, "sprites/Obstacle4.png");
+        embedded_asset!(app, "sprites/Obstacle5.png");
+        embedded_asset!(app, "sprites/Obstacle6.png");
+        embedded_asset!(app, "sprites/Obstacle7.png");
+        embedded_asset!(app, "sprites/Obstacle8.png");
+        embedded_asset!(app, "sprites/Obstacle9.png");
+        embedded_asset!(app, "sprites/Obstacle10.png");
+        embedded_asset!(app, "sprites/Obstacle11.png");
+        embedded_asset!(app, "sprites/Obstacle12.png");
     }
+}
+
+pub fn random_obstacle() -> String {
+    "embedded://day6vis/sprites/Obstacle".to_string() + &(rand::random::<u8>() % 13).to_string() + ".png"
 }
