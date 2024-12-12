@@ -40,8 +40,7 @@ pub fn setup_menu(mut commands: Commands) {
                         StateButtonText,
                     ));
                 });
-        })
-        .id();
+        });
 }
 
 pub fn menu(
