@@ -165,6 +165,7 @@ fn sort_guards(mut rooms: ResMut<AllRooms>) {
     }
 }
 
+//TODO: extra ghost obstacles as X in trail color
 fn guard_spawn(
     mut commands: Commands,
     rooms: Res<AllRooms>,
@@ -190,7 +191,6 @@ fn guard_spawn(
     }
 }
 
-//TODO: extra ghost obstacles as X in trail color
 fn move_guard(
     time: Res<Time>,
     asset_server: Res<AssetServer>,
