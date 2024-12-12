@@ -3,8 +3,6 @@ use std::ops::{Deref, DerefMut};
 
 pub const CELL_SIZE: f32 = 20.0; // Define cell size in pixels
 pub const SCALE_FACTOR: f32 = 1.0; // Scaling factor for cell size
-pub const OFFSET_X: f32 = -500.0; // Offset to move the grid horizontally
-pub const OFFSET_Y: f32 = 500.0; // Offset to move the grid vertically
 
 pub const NORMAL_BUTTON: Color = Color::srgb(0.15, 0.15, 0.15);
 pub const HOVERED_BUTTON: Color = Color::srgb(0.25, 0.25, 0.25);

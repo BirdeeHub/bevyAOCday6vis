@@ -114,7 +114,7 @@ fn handle_calc_tasks(mut commands: Commands, mut transform_tasks: Query<(Entity,
         let mut context = Context::from_waker(&waker);
 
         // Poll the future
-        let poll_result = pinned_task.as_mut().poll(&mut context);
+        let poll_result = pinned_task.poll(&mut context);
 
         match poll_result {
             Poll::Ready(mut commands_queue) => {
@@ -160,8 +160,8 @@ fn room_setup(
             commands.spawn((
                 sprite,
                 Transform::from_translation(Vec3::new(
-                    x as f32 * SCALED_CELL_SIZE + OFFSET_X,
-                    y as f32 * -SCALED_CELL_SIZE + OFFSET_Y, // Use -scaled_cell_size for inverted Y
+                    x as f32 * SCALED_CELL_SIZE,
+                    y as f32 * -SCALED_CELL_SIZE, // Use -scaled_cell_size for inverted Y
                     0.0,
                 )),
                 Visibility::default(),
@@ -186,8 +186,8 @@ fn guard_spawn(
             commands.spawn((
                 Sprite::from_image(asset_server.load(get_guard_sprite(&dir,1))),
                 Transform::from_translation(Vec3::new(
-                    x as f32 * SCALED_CELL_SIZE + OFFSET_X,
-                    y as f32 * -SCALED_CELL_SIZE + OFFSET_Y,
+                    x as f32 * SCALED_CELL_SIZE,
+                    y as f32 * -SCALED_CELL_SIZE,
                     2.0,
                 )),
                 Visibility::default(),
@@ -205,8 +205,8 @@ fn move_guard(
     for (mut tform, mut sprite, guard) in &mut guardquery {
         if let Some((dir,(x,y))) = guard.get_loc() {
             let mut direction = Vec3::ZERO;
-            direction.x = (x as f32 * SCALED_CELL_SIZE + OFFSET_X) - tform.translation.x;
-            direction.y = (y as f32 * -SCALED_CELL_SIZE + OFFSET_Y) - tform.translation.y;
+            direction.x = (x as f32 * SCALED_CELL_SIZE) - tform.translation.x;
+            direction.y = (y as f32 * -SCALED_CELL_SIZE) - tform.translation.y;
             if direction != Vec3::ZERO {
                 tform.translation += direction * SCALED_CELL_SIZE * time.delta_secs();
             }
@@ -249,8 +249,8 @@ fn render_trail(
                             ..default()
                         },
                         Transform::from_translation(Vec3::new(
-                            *x as f32 * SCALED_CELL_SIZE + OFFSET_X,
-                            *y as f32 * -SCALED_CELL_SIZE + OFFSET_Y,
+                            *x as f32 * SCALED_CELL_SIZE,
+                            *y as f32 * -SCALED_CELL_SIZE,
                             1.0,
                         )),
                         Visibility::default(),
@@ -267,8 +267,8 @@ fn render_trail(
                             ..default()
                         },
                         Transform::from_translation(Vec3::new(
-                            *x as f32 * SCALED_CELL_SIZE + OFFSET_X,
-                            *y as f32 * -SCALED_CELL_SIZE + OFFSET_Y,
+                            *x as f32 * SCALED_CELL_SIZE,
+                            *y as f32 * -SCALED_CELL_SIZE,
                             1.0,
                         )),
                         Visibility::default(),
