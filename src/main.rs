@@ -77,7 +77,6 @@ fn spawn_calc_tasks(
         let init_is_loop = guard1.is_loop;
         let to_check = room.to_check.clone();
         for (i,(x,y)) in to_check.iter().enumerate() {
-            let entity = commands.spawn_empty().id();
             let mut room = room.clone();
             let obsx = *x;
             let obsy = *y;
@@ -92,7 +91,7 @@ fn spawn_calc_tasks(
                 });
                 command_queue
             });
-            commands.entity(entity).insert(ComputeTrails(task));
+            commands.spawn(ComputeTrails(task));
         }
     }
 }
