@@ -3,7 +3,6 @@ use std::env;
 use std::task::{Context, Poll};
 mod part1and2;
 mod types;
-mod asset;
 mod buttons;
 mod camera;
 
@@ -14,8 +13,6 @@ use bevy::{
 };
 
 use crate::types::*;
-
-use crate::asset::{EmbeddedPlug, get_guard_sprite};
 
 fn main() -> Result<()> {
 
@@ -169,9 +166,9 @@ fn guard_spawn(
     let Some((_, guards)) = rooms.get_room(stateinfo.room_idx) else { return; };
     for guard in &guards.0 {
         if *state.get() == AppState::Part1 && guard.display_index != 0 { continue; }
-        if let Some((dir,(x,y))) = guard.get_loc() {
+        if let Some((_,(x,y))) = guard.get_loc() {
             commands.spawn((
-                Sprite::from_image(asset_server.load(get_guard_sprite(&dir,1))),
+                Sprite::from_image(asset_server.load(guard.get_sprite())),
                 Transform::from_translation(Vec3::new(
                     x as f32 * SCALED_CELL_SIZE,
                     y as f32 * -SCALED_CELL_SIZE,
@@ -190,14 +187,14 @@ fn move_guard(
     mut guardquery: Query<(&mut Transform, &mut Sprite, &mut Guard)>,
 ) {
     for (mut tform, mut sprite, guard) in &mut guardquery {
-        if let Some((dir,(x,y))) = guard.get_loc() {
+        if let Some((_,(x,y))) = guard.get_loc() {
             let mut direction = Vec3::ZERO;
             direction.x = x as f32 * SCALED_CELL_SIZE;
             direction.y = y as f32 * -SCALED_CELL_SIZE;
             direction.z = tform.translation.z;
             let scalefactor = direction.distance(tform.translation) * SCALED_CELL_SIZE/2.;
             tform.translation.smooth_nudge(&direction, scalefactor, time.delta_secs());
-            *sprite = Sprite::from_image(asset_server.load(get_guard_sprite(&dir,1)));
+            *sprite = Sprite::from_image(asset_server.load(guard.get_sprite()));
         }
     }
 }
