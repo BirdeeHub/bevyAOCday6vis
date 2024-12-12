@@ -131,7 +131,7 @@ fn room_setup(
     for (x, row) in room.iter().enumerate() {
         for (y, cell) in row.iter().enumerate() {
             let sprite = match cell {
-                RoomSpace::Obstacle => Sprite {
+                RoomSpace::Obstacle => Sprite { // TODO: Randomized obstacle sprites
                     color: Color::srgb(0.0, 0.0, 0.0), // Black
                     custom_size: Some(Vec2::new(SCALED_CELL_SIZE, SCALED_CELL_SIZE)),
                     ..default()
@@ -200,7 +200,7 @@ fn move_guard(
     }
 }
 
-//TODO: Rainbow trail with increasing sizes, extra ghost obstacles
+//TODO: Rainbow trail with increasing sizes, extra ghost obstacles as X in trail color
 fn render_trail(
     mut commands: Commands,
     time: Res<Time>,
