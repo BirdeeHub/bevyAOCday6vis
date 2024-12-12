@@ -45,7 +45,6 @@ fn load_room(
     mut allrooms: ResMut<AllRooms>,
     mut stateinfo: ResMut<StateInfo>,
 ) {
-    // Get the Room and trails from your logic
     let args: Vec<String> = std::env::args().collect();
     let filepath = match args.get(1) {
         Some(filepath_arg) => filepath_arg.to_string(),
