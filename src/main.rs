@@ -1,11 +1,16 @@
 use std::io::Result;
 use std::env;
-use bevy::prelude::*;
 mod part1and2;
 mod types;
 mod asset;
 mod buttons;
 mod camera;
+
+use bevy::{
+    ecs::{system::SystemState, world::CommandQueue},
+    prelude::*,
+    tasks::{block_on, futures_lite::future, AsyncComputeTaskPool, Task},
+};
 
 use crate::types::*;
 
@@ -20,8 +25,9 @@ fn main() -> Result<()> {
         .insert_resource(StateInfo::new())
         .insert_resource(MoveTimer(Timer::from_seconds(0.05, TimerMode::Repeating)))
         .add_systems(Startup,(crate::camera::setup_camera,crate::buttons::setup_menu))
-        .add_systems(Update,(calc_room,crate::buttons::menu))
-        .add_systems(OnExit(AppState::InputScreen),load_room)
+        .add_systems(Update,crate::buttons::menu)
+        .add_systems(Update,handle_calc_tasks)
+        .add_systems(OnExit(AppState::InputScreen),(load_room, spawn_calc_tasks).chain())
         .add_systems(OnEnter(AppState::Part1),(room_setup, guard_spawn).chain())
         .add_systems(Update,(render_trail,move_guard,crate::camera::update_camera).chain().run_if(in_state(AppState::Part1)))
         .add_systems(OnExit(AppState::Part1),(cleanup_guards, cleanup_room).chain())
@@ -31,22 +37,6 @@ fn main() -> Result<()> {
         .run();
 
     Ok(())
-}
-
-fn calc_room(
-    mut allrooms: ResMut<AllRooms>,
-) {
-    for (room,guards) in allrooms.0.iter_mut() {
-        if StateInfo::p2_loaded(&room, &guards) { continue; }
-        let Some(guard1) = guards.get(0) else { continue; };
-        let init_is_loop = guard1.is_loop;
-        for (i,(x,y)) in room.to_check.iter().enumerate() {
-            println!("{} / {}",i,room.to_check.len());
-            guards.push(crate::part1and2::part2(&mut room.clone(), init_is_loop, *x,*y, i+1));
-        }
-        let obstacles = crate::part1and2::deduplicate_vec(guards.iter().filter(|v|v.is_loop).collect()).len();
-        println!("Part 2: possible obstacle locations for loop: {:?}",obstacles);
-    }
 }
 
 fn load_room(
@@ -69,6 +59,57 @@ fn load_room(
     allrooms.push((board,guards));
     stateinfo.room_idx = Some(0);
     println!("Part 1: total visited: {}", visited);
+}
+
+#[derive(Component)]
+struct ComputeTrails(Task<CommandQueue>);
+
+fn spawn_calc_tasks(
+    mut commands: Commands,
+    rooms: Res<AllRooms>,
+) {
+    let thread_pool = AsyncComputeTaskPool::get();
+    for (index, (room,guards)) in rooms.0.iter().enumerate() {
+        if StateInfo::p2_loaded(&room, &guards) { return; }
+        let Some(guard1) = guards.get(0) else { return; };
+        let init_is_loop = guard1.is_loop;
+        let to_check = room.to_check.clone();
+        let total = to_check.len();
+        for (i,(x,y)) in to_check.iter().enumerate() {
+            let entity = commands.spawn_empty().id();
+            let mut room = room.clone();
+            let obsx = *x;
+            let obsy = *y;
+            let idx = i+1;
+            let task = thread_pool.spawn(async move {
+                let newguard = crate::part1and2::part2(&mut room, init_is_loop, obsx,obsy, idx);
+                println!("guard: {} / {}",idx,total);
+
+                let mut command_queue = CommandQueue::default();
+
+                // we use a raw command queue to pass a FnOnce(&mut World) back to be applied in a deferred manner.
+                command_queue.push(move |world: &mut World| {
+                    let Some(mut allrooms) = world.get_resource_mut::<AllRooms>() else { return; };
+                    let Some((_, ref mut guards)) = allrooms.get_room_mut(Some(index)) else { return; };
+                    //guards.insert(idx,newguard);
+                    guards.push(newguard);
+                });
+
+                command_queue
+            });
+            commands.entity(entity).insert(ComputeTrails(task));
+        }
+    }
+}
+
+fn handle_calc_tasks(mut commands: Commands, mut transform_tasks: Query<(Entity, &mut ComputeTrails)>) {
+    for (entity, mut task) in &mut transform_tasks {
+        if let Some(mut commands_queue) = block_on(future::poll_once(&mut task.0)) {
+            // append the returned command queue to have it execute later
+            commands.append(&mut commands_queue);
+            commands.entity(entity).despawn();
+        }
+    }
 }
 
 fn room_setup(
@@ -122,8 +163,9 @@ fn guard_spawn(
     asset_server: Res<AssetServer>,
 ) {
     let Some((room, guards)) = rooms.get_room(stateinfo.room_idx) else { return; };
-    if ! StateInfo::p1_loaded(&guards) && ! StateInfo::p2_loaded(&room,&guards) { return; }
     for guard in &guards.0 {
+        println!("Guard {}", guard.display_index);
+        if *state.get() == AppState::Part1 && guard.display_index != 0 { continue; }
         if let Some((dir,(x,y))) = guard.get_loc() {
             commands.spawn((
                 Sprite::from_image(asset_server.load(get_guard_sprite(&dir,1))),
@@ -136,7 +178,6 @@ fn guard_spawn(
                 guard.clone(),
             ));
         }
-        if *state == AppState::Part1 { break; }
     }
 }
 
