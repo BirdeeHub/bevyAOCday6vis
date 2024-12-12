@@ -44,7 +44,7 @@ pub fn setup_menu(mut commands: Commands) {
 }
 
 //TODO: add a slider for speed.
-//TODO: add a way to select which guard to follow in part 2.
+//TODO: add a slider with optional number input/display to select/see which guard to follow in part 2.
 //TODO: add a progress indicator for part 2 load and make the state button update correctly
 
 pub fn menu(
@@ -70,16 +70,7 @@ pub fn menu(
             });
             match *interaction {
                 Interaction::Pressed => {
-                    *color = match state.get() {
-                        AppState::Part1 => {
-                            if ! p2loaded {
-                                HOVERED_BUTTON.into()
-                            } else {
-                                PRESSED_BUTTON.into()
-                            }
-                        }
-                        _ => PRESSED_BUTTON.into(),
-                    };
+                    *color = PRESSED_BUTTON.into();
                     match state.get() {
                         AppState::InputScreen => next_state.set(AppState::Part1),
                         AppState::Part1 => {
@@ -94,16 +85,7 @@ pub fn menu(
                     *color = HOVERED_BUTTON.into();
                 }
                 Interaction::None => {
-                    *color = match state.get() {
-                        AppState::Part1 => {
-                            if ! p2loaded {
-                                HOVERED_BUTTON.into()
-                            } else {
-                                NORMAL_BUTTON.into()
-                            }
-                        }
-                        _ => NORMAL_BUTTON.into(),
-                    }
+                    *color = NORMAL_BUTTON.into();
                 }
             }
         }

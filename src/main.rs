@@ -3,7 +3,7 @@ use std::env;
 use std::task::{Context, Poll};
 mod part1and2;
 mod types;
-mod buttons;
+mod controls;
 mod camera;
 
 use bevy::{
@@ -22,8 +22,8 @@ fn main() -> Result<()> {
         .insert_resource(AllRooms::new())
         .insert_resource(StateInfo::new())
         .insert_resource(MoveTimer(Timer::from_seconds(0.05, TimerMode::Repeating)))
-        .add_systems(Startup,(crate::camera::setup_camera,crate::buttons::setup_menu))
-        .add_systems(Update,crate::buttons::menu)
+        .add_systems(Startup,(crate::camera::setup_camera,crate::controls::setup_menu))
+        .add_systems(Update,crate::controls::menu)
         .add_systems(Update,handle_calc_tasks)
         .add_systems(OnExit(AppState::InputScreen),(load_room, spawn_calc_tasks).chain())
         .add_systems(OnEnter(AppState::Part1),(room_setup, guard_spawn).chain())
