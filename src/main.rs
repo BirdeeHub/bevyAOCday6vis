@@ -183,7 +183,7 @@ fn guard_spawn(
 fn move_guard(
     time: Res<Time>,
     asset_server: Res<AssetServer>,
-    mut guardquery: Query<(&mut Transform, &mut Sprite, &mut Guard)>,
+    mut guardquery: Query<(&mut Transform, &mut Sprite, &Guard)>,
 ) {
     for (mut tform, mut sprite, guard) in &mut guardquery {
         if let Some((_,(x,y))) = guard.get_loc() {
