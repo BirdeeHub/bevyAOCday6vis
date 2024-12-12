@@ -221,7 +221,7 @@ fn render_trail(
                             1.0,
                         )),
                         Visibility::default(),
-                        TrailEntity::new(guard.display_index),
+                        TrailEntity::new(guard.trail_idx,guard.display_index),
                     ));
                 }
             }
@@ -238,7 +238,7 @@ fn render_trail(
                         1.0,
                     )),
                     Visibility::default(),
-                    TrailEntity::new(guard.display_index),
+                    TrailEntity::new(guard.trail_idx,guard.display_index),
                 ));
             }
         }
