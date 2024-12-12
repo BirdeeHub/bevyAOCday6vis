@@ -17,7 +17,7 @@ APPDRV = rustPlatform.buildRustPackage {
   buildInputs = [ libX11 libxcb alsa-lib libudev-zero ];
 
   cargoLock = {
-    lockFileContents = builtins.readFile "${src}/Cargo.lock";
+    lockFileContents = builtins.readFile ./Cargo.lock;
   };
 
 };
