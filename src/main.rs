@@ -208,7 +208,7 @@ fn render_trail(
     querytrail: Query<(Entity, &TrailEntity)>,
     mut guardquery: Query<&mut Guard>,
 ) {
-    let Some((room, guards)) = rooms.get_room_mut(stateinfo.room_idx) else { return; };
+    let Some((_, guards)) = rooms.get_room_mut(stateinfo.room_idx) else { return; };
     if timer.0.tick(time.delta()).just_finished() && StateInfo::p1_loaded(&guards) {
         for mut guard in guardquery.iter_mut() {
             guard.advance();

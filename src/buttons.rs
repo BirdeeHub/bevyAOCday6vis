@@ -4,7 +4,7 @@ use crate::types::*;
 #[derive(Component)]
 pub struct StateButtonText;
 pub fn setup_menu(mut commands: Commands) {
-    let button_entity = commands
+    commands
         .spawn(Node {
             // center button
             width: Val::Vw(100.),
