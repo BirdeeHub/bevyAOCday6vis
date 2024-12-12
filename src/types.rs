@@ -181,6 +181,9 @@ impl AllGuards {
     pub fn new() -> AllGuards {
         AllGuards(Vec::new())
     }
+    pub fn sort_by_idx(&mut self) {
+        self.0.sort_by(|a, b| a.display_index.cmp(&b.display_index));
+    }
 }
 
 impl Deref for AllGuards {

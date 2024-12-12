@@ -1,7 +1,6 @@
 use std::io::Result;
 use std::env;
 use std::task::{Context, Poll};
-use std::pin::Pin;
 mod part1and2;
 mod types;
 mod asset;
@@ -9,9 +8,9 @@ mod buttons;
 mod camera;
 
 use bevy::{
-    ecs::{system::SystemState, world::CommandQueue},
+    ecs::world::CommandQueue,
     prelude::*,
-    tasks::{futures_lite::FutureExt, futures_lite::future, AsyncComputeTaskPool, Task, poll_once},
+    tasks::{futures_lite::FutureExt, AsyncComputeTaskPool, Task},
 };
 
 use crate::types::*;
@@ -165,7 +164,7 @@ fn guard_spawn(
     state: Res<State<AppState>>,
     asset_server: Res<AssetServer>,
 ) {
-    let Some((room, guards)) = rooms.get_room(stateinfo.room_idx) else { return; };
+    let Some((_, guards)) = rooms.get_room(stateinfo.room_idx) else { return; };
     for guard in &guards.0 {
         if *state.get() == AppState::Part1 && guard.display_index != 0 { continue; }
         if let Some((dir,(x,y))) = guard.get_loc() {
@@ -191,11 +190,10 @@ fn move_guard(
     for (mut tform, mut sprite, guard) in &mut guardquery {
         if let Some((dir,(x,y))) = guard.get_loc() {
             let mut direction = Vec3::ZERO;
-            direction.x = (x as f32 * SCALED_CELL_SIZE) - tform.translation.x;
-            direction.y = (y as f32 * -SCALED_CELL_SIZE) - tform.translation.y;
-            if direction != Vec3::ZERO {
-                tform.translation += direction * SCALED_CELL_SIZE * time.delta_secs();
-            }
+            direction.x = x as f32 * SCALED_CELL_SIZE;
+            direction.y = y as f32 * -SCALED_CELL_SIZE;
+            direction.z = tform.translation.z;
+            tform.translation.smooth_nudge(&direction, SCALED_CELL_SIZE, time.delta_secs());
             *sprite = Sprite::from_image(asset_server.load(get_guard_sprite(&dir,1)));
         }
     }
