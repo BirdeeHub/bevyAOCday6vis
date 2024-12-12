@@ -103,7 +103,10 @@ fn spawn_calc_tasks(
     }
 }
 
-fn handle_calc_tasks(mut commands: Commands, mut transform_tasks: Query<(Entity, &mut ComputeTrails)>) {
+fn handle_calc_tasks(
+    mut commands: Commands,
+    mut transform_tasks: Query<(Entity, &mut ComputeTrails)>,
+) {
     for (entity, mut task) in &mut transform_tasks {
         let waker = futures::task::noop_waker();
         let mut context = Context::from_waker(&waker);
@@ -209,7 +212,7 @@ fn render_trail(
     mut guardquery: Query<&mut Guard>,
 ) {
     let Some((room, guards)) = rooms.get_room_mut(stateinfo.room_idx) else { return; };
-    if timer.0.tick(time.delta()).just_finished() && StateInfo::p1_loaded(&guards) && StateInfo::p2_loaded(&room,&guards) {
+    if timer.0.tick(time.delta()).just_finished() && StateInfo::p1_loaded(&guards) {
         for mut guard in guardquery.iter_mut() {
             guard.advance();
             let mut final_idx = 0;
