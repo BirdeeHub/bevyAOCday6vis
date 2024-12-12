@@ -10,7 +10,7 @@ pub fn read_file(file_path: &str) -> io::Result<String> {
     Ok(contents)
 }
 
-pub fn part1(input: String) -> Result<(Room,Guard,usize), String> {
+pub fn part1(input: String) -> Result<(Room,Guard,usize), RoomError> {
     let mut board = Room::from_string(input)?;
     let boardx = board.len();
     let boardy = board[0].len();

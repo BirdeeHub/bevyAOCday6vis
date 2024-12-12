@@ -18,11 +18,10 @@ pub const CAMERA_DECAY_RATE: f32 = 2.;
 pub struct StateInfo{
     pub room_idx: Option<usize>,
     pub camera_target: usize,
-    pub seq: bool,
 }
 impl StateInfo {
     pub fn new() -> StateInfo {
-        StateInfo{camera_target:0,seq:true,room_idx:None,}
+        StateInfo{camera_target:0,room_idx:None,}
     }
     pub fn p1_loaded(guards:&AllGuards) -> bool {
         ! guards.is_empty()
@@ -55,11 +54,26 @@ pub struct Room {
     pub to_check: Vec<(usize,usize)>,
 }
 
+pub enum RoomError {
+    NoGuards,
+    ManyGuards,
+    Uneven,
+}
+impl std::fmt::Display for RoomError {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        fmt.write_str(match self {
+            RoomError::NoGuards => "Room has no guards.",
+            RoomError::ManyGuards => "Room has more than one guard.",
+            RoomError::Uneven => "Room is not rectangular.",
+        })
+    }
+}
+
 impl Room {
     pub fn new() -> Room {
         Room{to_check: Vec::new(), grid: Vec::new(), initial_guard_pos:None}
     }
-    pub fn from_string(input: String) -> Result<Room,String> {
+    pub fn from_string(input: String) -> Result<Room,RoomError> {
         let mut rawout:Vec<Vec<RoomSpace>> = Vec::new();
 
         let mut guard_found = false;
@@ -77,7 +91,7 @@ impl Room {
                 };
                 if let RoomSpace::Guard(_) = value {
                     if guard_found {
-                        return Err("too many guards".to_string());
+                        return Err(RoomError::ManyGuards);
                     } else {
                         guard_found = true;
                     }
@@ -87,7 +101,17 @@ impl Room {
             rawout.push(row);
         }
         if !guard_found {
-            return Err("no guard".to_string());
+            return Err(RoomError::NoGuards);
+        }
+        let mut mutlock = true;
+        let mut rowlen = 0;
+        for row in &rawout {
+            if mutlock {
+                rowlen = row.len();
+                mutlock = false;
+            } else if row.len() != rowlen {
+                return Err(RoomError::Uneven);
+            }
         }
         // fix x and y...
         let mut newroom = Room::new();

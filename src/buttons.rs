@@ -43,6 +43,9 @@ pub fn setup_menu(mut commands: Commands) {
         });
 }
 
+//TODO: add a slider for speed.
+//TODO: add a progress indicator for part 2 load and make the state button update correctly
+
 pub fn menu(
     mut next_state: ResMut<NextState<AppState>>,
     state: Res<State<AppState>>,

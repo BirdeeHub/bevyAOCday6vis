@@ -40,6 +40,7 @@ fn main() -> Result<()> {
 // TODO: make an input screen, make this happen conditionally when they do that
 // give a second button to choose which input they should use by setting StateInfo.room_idx
 // and then fetch that and allguards here when input phase exits
+// should also give instructions on how to format the input
 fn load_room(
     mut allrooms: ResMut<AllRooms>,
     mut stateinfo: ResMut<StateInfo>,
@@ -199,6 +200,7 @@ fn move_guard(
     }
 }
 
+//TODO: Rainbow trail with increasing sizes, extra ghost obstacles
 fn render_trail(
     mut commands: Commands,
     time: Res<Time>,
