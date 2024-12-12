@@ -108,8 +108,7 @@ fn handle_calc_tasks(mut commands: Commands, mut transform_tasks: Query<(Entity,
     for (entity, mut task) in &mut transform_tasks {
         let waker = futures::task::noop_waker();
         let mut context = Context::from_waker(&waker);
-        if let Poll::Ready(Some(mut commands_queue)) = poll_once(&mut task.0).poll(&mut context) {
-            // If it's ready, process the commands
+        if let Poll::Ready(mut commands_queue) = task.0.poll(&mut context) {
             commands.append(&mut commands_queue);
             commands.entity(entity).despawn();
         }
