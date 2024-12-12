@@ -71,25 +71,23 @@ fn spawn_calc_tasks(
     rooms: Res<AllRooms>,
 ) {
     let thread_pool = AsyncComputeTaskPool::get();
-    for (index, (room,guards)) in rooms.0.iter().enumerate() {
+    for (room_index, (room,guards)) in rooms.0.iter().enumerate() {
         if StateInfo::p2_loaded(&room, &guards) { return; }
         let Some(guard1) = guards.get(0) else { return; };
         let init_is_loop = guard1.is_loop;
         let to_check = room.to_check.clone();
-        let total = to_check.len();
         for (i,(x,y)) in to_check.iter().enumerate() {
             let entity = commands.spawn_empty().id();
             let mut room = room.clone();
             let obsx = *x;
             let obsy = *y;
-            let idx = i+1;
             let task = thread_pool.spawn(async move {
-                let newguard = crate::part1and2::part2(&mut room, init_is_loop, obsx,obsy, idx);
+                let newguard = crate::part1and2::part2(&mut room, init_is_loop, obsx,obsy, i+1);
                 let mut command_queue = CommandQueue::default();
                 // we use a raw command queue to pass a FnOnce(&mut World) back to be applied in a deferred manner.
                 command_queue.push(move |world: &mut World| {
                     let Some(mut allrooms) = world.get_resource_mut::<AllRooms>() else { return; };
-                    let Some((_, ref mut guards)) = allrooms.get_room_mut(Some(index)) else { return; };
+                    let Some((_, ref mut guards)) = allrooms.get_room_mut(Some(room_index)) else { return; };
                     guards.push(newguard);
                 });
                 command_queue
@@ -150,9 +148,14 @@ fn room_setup(
                 )),
                 Visibility::default(),
                 Space{x,y},
-                GridEntity,
             ));
         }
+    }
+}
+
+fn sort_guards(mut rooms: ResMut<AllRooms>) {
+    for (_, ref mut guards) in rooms.iter_mut() {
+        guards.sort_by_idx();
     }
 }
 
@@ -246,7 +249,7 @@ fn render_trail(
     }
 }
 
-fn cleanup_room(mut commands: Commands, items: Query<Entity, With<GridEntity>>) {
+fn cleanup_room(mut commands: Commands, items: Query<Entity, With<Space>>) {
     for entity in items.iter() {
         commands.entity(entity).despawn_recursive();
     }
@@ -258,11 +261,5 @@ fn cleanup_guards(mut commands: Commands, guard: Query<Entity, With<Guard>>, tra
     }
     for entity in trail.iter() {
         commands.entity(entity).despawn_recursive();
-    }
-}
-
-fn sort_guards(mut rooms: ResMut<AllRooms>) {
-    for (room, ref mut guards) in rooms.iter_mut() {
-        guards.sort_by_idx();
     }
 }

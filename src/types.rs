@@ -24,9 +24,6 @@ impl StateInfo {
     pub fn new() -> StateInfo {
         StateInfo{camera_target:0,room_idx:None,}
     }
-    pub fn p1_loaded(guards:&AllGuards) -> bool {
-        ! guards.is_empty()
-    }
     pub fn p2_loaded(room:&Room,guards:&AllGuards) -> bool {
         room.to_check.len() <= guards.0.len()
     }
@@ -310,13 +307,6 @@ impl Guard {
             None
         }
     }
-    pub fn get_current_trail(&mut self) -> Trail {
-        let mut ret = Trail::new();
-        for i in 0..self.trail_idx {
-            ret.push(self.trail[i].clone());
-        }
-        ret
-    }
     pub fn get_loc(&self) -> Option<(Direction,(usize,usize))> {
         if let Some((dir,(x,y))) = self.trail.get(self.trail_idx) {
             Some((dir.clone(),(*x,*y)))
@@ -360,9 +350,6 @@ impl Guard {
         }).to_string()
     }
 }
-
-#[derive(Component)]
-pub struct GridEntity;
 
 #[derive(Component)]
 pub struct TrailEntity {
