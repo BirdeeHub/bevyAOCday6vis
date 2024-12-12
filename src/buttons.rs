@@ -66,7 +66,16 @@ pub fn menu(
             });
             match *interaction {
                 Interaction::Pressed => {
-                    *color = PRESSED_BUTTON.into();
+                    *color = match state.get() {
+                        AppState::Part1 => {
+                            if ! p2loaded {
+                                HOVERED_BUTTON.into()
+                            } else {
+                                PRESSED_BUTTON.into()
+                            }
+                        }
+                        _ => PRESSED_BUTTON.into(),
+                    };
                     match state.get() {
                         AppState::InputScreen => next_state.set(AppState::Part1),
                         AppState::Part1 => {
@@ -81,7 +90,16 @@ pub fn menu(
                     *color = HOVERED_BUTTON.into();
                 }
                 Interaction::None => {
-                    *color = NORMAL_BUTTON.into();
+                    *color = match state.get() {
+                        AppState::Part1 => {
+                            if ! p2loaded {
+                                HOVERED_BUTTON.into()
+                            } else {
+                                NORMAL_BUTTON.into()
+                            }
+                        }
+                        _ => NORMAL_BUTTON.into(),
+                    }
                 }
             }
         }
