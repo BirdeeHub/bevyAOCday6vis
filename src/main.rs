@@ -184,9 +184,9 @@ fn guard_spawn(
 fn move_guard(
     time: Res<Time>,
     asset_server: Res<AssetServer>,
-    mut guardquery: Query<(&mut Transform, &mut Sprite, &Guard)>,
+    mut guards: Query<(&mut Transform, &mut Sprite, &Guard)>,
 ) {
-    for (mut tform, mut sprite, guard) in &mut guardquery {
+    for (mut tform, mut sprite, guard) in &mut guards {
         if let Some((_,(x,y))) = guard.get_loc() {
             let mut direction = Vec3::ZERO;
             direction.x = x as f32 * SCALED_CELL_SIZE;
@@ -204,10 +204,10 @@ fn render_trail(
     mut commands: Commands,
     time: Res<Time>,
     mut timer: ResMut<MoveTimer>,
-    mut guardquery: Query<&mut Guard>,
+    mut guards: Query<&mut Guard>,
 ) {
     if timer.0.tick(time.delta()).just_finished() {
-        for mut guard in guardquery.iter_mut() {
+        for mut guard in guards.iter_mut() {
             if guard.trail_idx == 0 {
                 if let Some((_,(x,y))) = guard.trail.get(0) {
                     commands.spawn((
