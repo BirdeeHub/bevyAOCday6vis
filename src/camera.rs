@@ -5,8 +5,6 @@ pub fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2d);
 }
 
-const MAX_CAMERA_DISTANCE: f32 = 50.0;
-
 pub fn update_camera(
     mut camera: Query<&mut Transform, (With<Camera2d>, Without<Guard>)>,
     stateinfo: Res<StateInfo>,
