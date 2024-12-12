@@ -194,7 +194,8 @@ fn move_guard(
             direction.x = x as f32 * SCALED_CELL_SIZE;
             direction.y = y as f32 * -SCALED_CELL_SIZE;
             direction.z = tform.translation.z;
-            tform.translation.smooth_nudge(&direction, SCALED_CELL_SIZE, time.delta_secs());
+            let scalefactor = direction.distance(tform.translation) * SCALED_CELL_SIZE/2.;
+            tform.translation.smooth_nudge(&direction, scalefactor, time.delta_secs());
             *sprite = Sprite::from_image(asset_server.load(get_guard_sprite(&dir,1)));
         }
     }
