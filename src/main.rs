@@ -41,6 +41,8 @@ fn main() -> Result<()> {
 }
 
 // TODO: make an input screen, make this happen conditionally when they do that
+// give a second button to choose which input they should use by setting StateInfo.room_idx
+// and then fetch that and allguards here when input phase exits
 fn load_room(
     mut allrooms: ResMut<AllRooms>,
     mut stateinfo: ResMut<StateInfo>,
@@ -85,7 +87,6 @@ fn spawn_calc_tasks(
             let idx = i+1;
             let task = thread_pool.spawn(async move {
                 let newguard = crate::part1and2::part2(&mut room, init_is_loop, obsx,obsy, idx);
-                println!("guard: {} / {}",idx,total);
                 let mut command_queue = CommandQueue::default();
                 // we use a raw command queue to pass a FnOnce(&mut World) back to be applied in a deferred manner.
                 command_queue.push(move |world: &mut World| {
@@ -103,9 +104,9 @@ fn spawn_calc_tasks(
 
 fn handle_calc_tasks(
     mut commands: Commands,
-    mut transform_tasks: Query<(Entity, &mut ComputeTrails)>,
+    mut tasks: Query<(Entity, &mut ComputeTrails)>,
 ) {
-    for (entity, mut task) in &mut transform_tasks {
+    for (entity, mut task) in &mut tasks {
         let waker = futures::task::noop_waker();
         let mut context = Context::from_waker(&waker);
         if let Poll::Ready(mut commands_queue) = task.0.poll(&mut context) {
