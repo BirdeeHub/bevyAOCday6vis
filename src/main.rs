@@ -164,7 +164,6 @@ fn guard_spawn(
 ) {
     let Some((room, guards)) = rooms.get_room(stateinfo.room_idx) else { return; };
     for guard in &guards.0 {
-        println!("Guard {}", guard.display_index);
         if *state.get() == AppState::Part1 && guard.display_index != 0 { continue; }
         if let Some((dir,(x,y))) = guard.get_loc() {
             commands.spawn((
