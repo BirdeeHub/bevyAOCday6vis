@@ -1,5 +1,7 @@
 use std::io::Result;
 use std::env;
+use std::task::{Context, Poll};
+use std::pin::Pin;
 mod part1and2;
 mod types;
 mod asset;
@@ -9,7 +11,7 @@ mod camera;
 use bevy::{
     ecs::{system::SystemState, world::CommandQueue},
     prelude::*,
-    tasks::{block_on, futures_lite::future, AsyncComputeTaskPool, Task},
+    tasks::{futures_lite::FutureExt, futures_lite::future, AsyncComputeTaskPool, Task, poll_once},
 };
 
 use crate::types::*;
@@ -104,10 +106,25 @@ fn spawn_calc_tasks(
 
 fn handle_calc_tasks(mut commands: Commands, mut transform_tasks: Query<(Entity, &mut ComputeTrails)>) {
     for (entity, mut task) in &mut transform_tasks {
-        if let Some(mut commands_queue) = block_on(future::poll_once(&mut task.0)) {
-            // append the returned command queue to have it execute later
-            commands.append(&mut commands_queue);
-            commands.entity(entity).despawn();
+        // Poll the future once
+        let mut pinned_task = Box::pin(&mut task.0);
+        
+        // Create a dummy waker for the current context
+        let waker = futures::task::noop_waker();
+        let mut context = Context::from_waker(&waker);
+
+        // Poll the future
+        let poll_result = pinned_task.as_mut().poll(&mut context);
+
+        match poll_result {
+            Poll::Ready(mut commands_queue) => {
+                // If it's ready, process the commands
+                commands.append(&mut commands_queue);
+                commands.entity(entity).despawn();
+            }
+            _ => {
+                // If it's still pending, do nothing for now
+            }
         }
     }
 }

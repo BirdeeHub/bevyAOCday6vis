@@ -11,3 +11,4 @@ opt-level = 3
 
 [dependencies]
 bevy = { version = "0.15.0" }
+futures = "0.3"
