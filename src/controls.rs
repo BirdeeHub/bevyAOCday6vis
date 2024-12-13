@@ -55,10 +55,11 @@ pub fn setup_menu(
                         // Progress bar fill
                         progress_parent.spawn((
                             Node {
-                                width: Val::Percent(50.0), // Start with 50% progress
+                                width: Val::Percent(100.0), // Start with 50% progress
                                 height: Val::Percent(100.0),
                                 ..default()
                             },
+                            Visibility::Hidden,
                             BackgroundColor(Color::srgb(0.9, 0.9, 0.9)), // Bar color
                             ProgressBarFill, // Custom marker to identify the progress bar fill
                         ));
