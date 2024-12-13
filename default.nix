@@ -46,7 +46,6 @@ APPDRV = (makeRustPlatform fenix.packages.x86_64-linux.default).buildRustPackage
 };
 in
 writeShellScriptBin APPNAME ''
-  export AOC_INPUT=''${1:-./${APPNAME}/input};
   export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:${lib.makeLibraryPath [ alsa-lib udev vulkan-loader libxkbcommon]}"
-  exec ${APPDRV}/bin/${APPNAME}
+  exec ${APPDRV}/bin/${APPNAME} "$@"
 ''
