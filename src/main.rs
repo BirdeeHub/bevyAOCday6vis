@@ -77,8 +77,8 @@ fn spawn_calc_tasks(
 ) {
     let thread_pool = AsyncComputeTaskPool::get();
     for (room,guards) in rooms.0.iter() {
-        if StateInfo::p2_loaded(&room, &guards) { return; }
-        let Some(guard1) = guards.get(0) else { return; };
+        if StateInfo::p2_loaded(&room, &guards) { continue; }
+        let Some(guard1) = guards.get(0) else { continue; };
         let init_is_loop = guard1.is_loop;
         let to_check = room.to_check.clone();
         for (i,(x,y)) in to_check.iter().enumerate() {
@@ -247,13 +247,22 @@ fn move_guard(
 
 fn resize_trails(
     stateinfo: Res<StateInfo>,
-    mut trailent: Query<(&TrailEntity, &mut Sprite)>,
+    mut trailent: Query<(&TrailEntity, &mut Sprite), Without<Obstacle>>,
+    mut obstacles: Query<(&Obstacle, &mut Sprite)>
 ) {
     for (entobj, mut sprite) in trailent.iter_mut() {
         let custom_size = if entobj.guard_index == stateinfo.camera_target {
             Some(Vec2::new(SCALED_CELL_SIZE/2., SCALED_CELL_SIZE/2.))
         } else {
             Some(Vec2::new(SCALED_CELL_SIZE/4., SCALED_CELL_SIZE/4.))
+        };
+        sprite.custom_size = custom_size;
+    };
+    for (entobj, mut sprite) in obstacles.iter_mut() {
+        let custom_size = if entobj.0 == stateinfo.camera_target {
+            Some(Vec2::new(SCALED_CELL_SIZE, SCALED_CELL_SIZE/6.))
+        } else {
+            Some(Vec2::new(SCALED_CELL_SIZE/2., SCALED_CELL_SIZE/6.))
         };
         sprite.custom_size = custom_size;
     };
