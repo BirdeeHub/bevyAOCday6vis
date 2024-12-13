@@ -47,6 +47,8 @@ pub struct RoomButton(usize);
 pub struct InputText(pub String);
 #[derive(Resource)]
 pub struct PendingText(pub String);
+#[derive(Resource)]
+pub struct CurrentError(pub String);
 
 #[derive(Component)]
 pub struct MenuParent;

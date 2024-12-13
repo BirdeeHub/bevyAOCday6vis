@@ -1,50 +1,60 @@
-use bevy::prelude::*;
 use crate::types::*;
+use bevy::prelude::*;
+use bevy::ui::ZIndex;
 use bevy_egui::{egui, EguiContexts};
 use std::env;
-
-pub fn setup_input(
-    mut commands: Commands,
-) {
-    let args: Vec<String> = std::env::args().collect();
-    let filepath = match args.get(1) {
-        Some(filepath_arg) => filepath_arg.to_string(),
-        _ => env::var("AOC_INPUT").expect("AOC_INPUT not set")
-    };
-    let Ok(filecontents) = crate::part1and2::read_file(&filepath) else { panic!("TESTFILEFAIL AOC_INPUT NOT SET") };
-    //TODO: set up a UI for inputs here
-    commands.spawn(InputText(filecontents));
-}
-
-//TODO: make a system that handles the UI inputs and makes them into InputText
-
-//TODO: make a system that displays any existing ErrorBox entities and deletes them
 
 pub fn handle_input(
     mut contexts: EguiContexts,
     mut commands: Commands,
     mut stateinfo: ResMut<StateInfo>,
-    mut pending_text: ResMut<PendingText>
+    rooms: Res<AllRooms>,
+    mut pending_text: ResMut<PendingText>,
+    mut current_error: ResMut<CurrentError>,
+    err_query: Query<(Entity, &ErrorBox)>,
 ) {
-    egui::Window::new("Input Window").show(contexts.ctx_mut(), |ui| {
+    egui::Window::new("Input Controls").show(contexts.ctx_mut(), |ui| {
+        ui.horizontal(|ui| {
+            ui.button("New").clicked().then(|| {
+                pending_text.0.clear();
+            });
+            ui.button("Submit").clicked().then(|| {
+                commands.spawn(InputText(pending_text.0.clone()));
+                pending_text.0.clear();
+            });
+        });
         ui.text_edit_multiline(&mut pending_text.0);
+        ui.vertical(|ui| {
+            for (i,(room,_)) in rooms.iter().enumerate() {
+                if ui.radio_value(&mut stateinfo.room_idx, Some(i), i.to_string()).clicked() {
+                    pending_text.0.clear();
+                    pending_text.0 = format!("{}",room);
+                }
+            }
+        });
+        for (ent, err) in err_query.iter() {
+            current_error.0 = err.0.clone();
+            commands.entity(ent).despawn();
+        };
+        ui.label(&current_error.0);
     });
-    // TODO: make selector for this
-    stateinfo.room_idx = Some(0);
 }
 
-pub fn setup_menu(
-    mut commands: Commands,
-) {
-    commands.spawn((Node {
-        // center button
-        width: Val::Vw(100.),
-        height: Val::Vh(100.),
-        border: UiRect::axes(Val::Vw(5.), Val::Vh(5.)),
-        justify_content: JustifyContent::End,
-        align_items: AlignItems::Start,
-        ..default()
-    }, MenuParent)).with_children(|parent| {
+pub fn setup_menu(mut commands: Commands) {
+    commands.spawn((
+        Node {
+            // center button
+            width: Val::Vw(100.),
+            height: Val::Vh(100.),
+            border: UiRect::axes(Val::Vw(5.), Val::Vh(5.)),
+            justify_content: JustifyContent::End,
+            align_items: AlignItems::Start,
+            ..default()
+        },
+        ZIndex(100),
+        MenuParent,
+    ))
+    .with_children(|parent| {
         parent.spawn((
             Button,
             Node {
@@ -58,8 +68,10 @@ pub fn setup_menu(
                 ..default()
             },
             StateButton,
+            ZIndex(99),
             BackgroundColor(NORMAL_BUTTON),
-        )).with_children(|parent| {
+        ))
+        .with_children(|parent| {
             parent.spawn((
                 Text::new("Input"),
                 TextFont {
@@ -67,16 +79,20 @@ pub fn setup_menu(
                     ..default()
                 },
                 TextColor(Color::srgb(0.9, 0.9, 0.9)),
+                ZIndex(100),
                 StateButtonText,
             ));
-            parent.spawn(Node {
-                width: Val::Percent(100.0),
-                height: Val::Px(10.0), // Progress bar height
-                flex_direction: FlexDirection::Row,
-                justify_content: JustifyContent::FlexStart,
-                align_items: AlignItems::End,
-                ..default()
-            }).with_children(|progress_parent| {
+            parent.spawn((
+                Node {
+                    width: Val::Percent(100.0),
+                    height: Val::Px(10.0), // Progress bar height
+                    flex_direction: FlexDirection::Row,
+                    justify_content: JustifyContent::FlexStart,
+                    align_items: AlignItems::End,
+                    ..default()
+                },
+                ZIndex(100),
+            )).with_children(|progress_parent| {
                 // Progress bar fill
                 progress_parent.spawn((
                     Node {
@@ -85,6 +101,7 @@ pub fn setup_menu(
                         ..default()
                     },
                     Visibility::Hidden,
+                    ZIndex(101),
                     BackgroundColor(Color::srgb(0.9, 0.9, 0.9)), // Bar color
                     ProgressBarFill, // Custom marker to identify the progress bar fill
                 ));
@@ -97,7 +114,7 @@ pub fn prog_update_system(
     stateinfo: Res<StateInfo>,
     rooms: Res<AllRooms>,
     tasks: Query<Entity, With<ComputeTrails>>,
-    mut fill_bar: Query<(&mut Node, &mut Visibility), With<ProgressBarFill>>
+    mut fill_bar: Query<(&mut Node, &mut Visibility), With<ProgressBarFill>>,
 ) {
     let Some((room, _)) = rooms.get_room(stateinfo.room_idx) else {
         return;
@@ -113,7 +130,7 @@ pub fn prog_update_system(
             };
             node.width = Val::Percent(num_tasks / total_tasks * 100.);
         }
-    };
+    }
 }
 
 //TODO: add a slider for speed (changes timer tick length)
@@ -122,9 +139,14 @@ pub fn guard_slider(
     mut stateinfo: ResMut<StateInfo>,
     rooms: Res<AllRooms>,
 ) {
-    let Some((_, guards)) = rooms.get_room(stateinfo.room_idx) else { return; };
+    let Some((_, guards)) = rooms.get_room(stateinfo.room_idx) else {
+        return;
+    };
     egui::Window::new("Guard Controls").show(contexts.ctx_mut(), |ui| {
-        ui.add(egui::Slider::new(&mut stateinfo.camera_target, 0..=(guards.len()-1)).text("My value"));
+        ui.add(
+            egui::Slider::new(&mut stateinfo.camera_target, 0..=(guards.len() - 1))
+                .text("Focused Guard"),
+        );
     });
 }
 
@@ -137,11 +159,14 @@ pub fn menu(
         (Changed<Interaction>, With<Button>, With<StateButton>),
     >,
     stateinfo: Res<StateInfo>,
-    mut button_text: Query<&mut Text, With<StateButtonText>>
+    mut button_text: Query<&mut Text, With<StateButtonText>>,
 ) {
     let p2loaded = if let Some((room, guards)) = rooms.get_room(stateinfo.room_idx) {
         StateInfo::p2_loaded(room, guards)
-    } else { false };
+    } else {
+        false
+    };
+    //if *state.get() == AppState::InputScreen { return; };
     for (interaction, mut color) in &mut interaction_query {
         for mut text in &mut button_text {
             *text = Text::new(match state.get() {
@@ -157,12 +182,12 @@ pub fn menu(
                             if rooms.get_room(stateinfo.room_idx).is_some() {
                                 next_state.set(AppState::Part1);
                             }
-                        },
+                        }
                         AppState::Part1 => {
                             if p2loaded {
                                 next_state.set(AppState::Part2)
                             }
-                        },
+                        }
                         AppState::Part2 => next_state.set(AppState::InputScreen),
                     }
                 }
