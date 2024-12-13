@@ -79,15 +79,6 @@ pub fn prog_update_system(
 ) {
 }
 
-pub fn prog_cleanup_system(
-    mut commands: Commands,
-    mut fill_bar: Query<&mut Visibility, With<ProgressBarFill>>
-) {
-    fill_bar.iter_mut().for_each(|mut bar|{
-        *bar = Visibility::Hidden;
-    });
-}
-
 //TODO: add a slider for speed.
 //TODO: add a slider with optional number input/display to select/see which guard to follow in part 2.
 
