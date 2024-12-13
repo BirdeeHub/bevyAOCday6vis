@@ -208,8 +208,7 @@ fn move_guard(
     }
 }
 
-//TODO: Rainbow trail with increasing height and decreasing sizes
-//TODO: Despawn non-loop ghost obstacles and trail entities upon reaching their end
+//TODO: scale down unfocused guard trails
 fn render_trail(
     mut commands: Commands,
     time: Res<Time>,
