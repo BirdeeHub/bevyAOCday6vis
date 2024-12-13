@@ -406,7 +406,7 @@ impl AllRooms {
     }
     pub fn get_room_mut(&mut self,room_idx:Option<usize>) -> Option<&mut (Room,AllGuards)> {
         if let Some(room_idx) = room_idx {
-            for mut entry in &mut self.0 {
+            for entry in &mut self.0 {
                 if entry.0.index == room_idx { return Some(entry); }
             };
             return None;
