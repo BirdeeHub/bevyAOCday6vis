@@ -255,7 +255,6 @@ fn resize_trails(
     };
 }
 
-//TODO: scale down unfocused guard trails
 fn render_trail(
     mut commands: Commands,
     time: Res<Time>,
