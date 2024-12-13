@@ -67,18 +67,28 @@ pub fn setup_menu(
         });
 }
 
-//TODO: move progress indicator for part 2 load and make the state button update correctly
-// only run in part 1
 pub fn prog_update_system(
     mut commands: Commands,
     stateinfo: Res<StateInfo>,
     rooms: Res<AllRooms>,
     tasks: Query<Entity, With<ComputeTrails>>,
-    mut state_button: Query<&mut BackgroundColor, With<StateButton>>,
     mut fill_bar: Query<(&mut Node, &mut Visibility), With<ProgressBarFill>>
 ) {
-    let num_tasks = tasks.iter().count();
-    println!("num_tasks {}", num_tasks);
+    let Some((room, guards)) = rooms.get_room(stateinfo.room_idx) else {
+        return;
+    };
+    let num_tasks = tasks.iter().count() as f32;
+    let total_tasks = room.to_check.len() as f32;
+    for (mut node, mut vis) in &mut fill_bar {
+        if num_tasks == 0.0 {
+            *vis = Visibility::Hidden;
+        } else {
+            if *vis == Visibility::Hidden {
+                *vis = Visibility::Visible;
+            };
+            node.width = Val::Percent(num_tasks / total_tasks * 100.);
+        }
+    };
 }
 
 //TODO: add a slider for speed.
@@ -107,16 +117,7 @@ pub fn menu(
             });
             match *interaction {
                 Interaction::Pressed => {
-                    *color = match state.get() {
-                        AppState::Part1 => {
-                            if ! p2loaded {
-                                HOVERED_BUTTON.into()
-                            } else {
-                                PRESSED_BUTTON.into()
-                            }
-                        }
-                        _ => PRESSED_BUTTON.into(),
-                    };
+                    *color = PRESSED_BUTTON.into();
                     match state.get() {
                         AppState::InputScreen => next_state.set(AppState::Part1),
                         AppState::Part1 => {
@@ -131,16 +132,7 @@ pub fn menu(
                     *color = HOVERED_BUTTON.into();
                 }
                 Interaction::None => {
-                    *color = match state.get() {
-                        AppState::Part1 => {
-                            if ! p2loaded {
-                                HOVERED_BUTTON.into()
-                            } else {
-                                NORMAL_BUTTON.into()
-                            }
-                        }
-                        _ => NORMAL_BUTTON.into(),
-                    }
+                    *color = NORMAL_BUTTON.into();
                 }
             }
         }
