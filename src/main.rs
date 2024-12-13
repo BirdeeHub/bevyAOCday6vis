@@ -29,10 +29,11 @@ fn main() -> Result<()> {
         .add_systems(Update,handle_calc_tasks)
         .add_systems(OnExit(AppState::InputScreen),(load_room, spawn_calc_tasks).chain())
         .add_systems(OnEnter(AppState::Part1),(room_setup, guard_spawn).chain())
-        .add_systems(Update,(prog_update_system,(render_trail,move_guard,update_camera).chain()).run_if(in_state(AppState::Part1)))
+        .add_systems(Update,(prog_update_system,resize_trails,(render_trail,move_guard,update_camera).chain()).run_if(in_state(AppState::Part1)))
         .add_systems(OnExit(AppState::Part1),cleanup_room)
         .add_systems(OnEnter(AppState::Part2),(room_setup, sort_guards, guard_spawn).chain())
         .add_systems(Update,(render_trail,move_guard,update_camera,cleanup_non_looping).chain().run_if(in_state(AppState::Part2)))
+        .add_systems(Update,(resize_trails).run_if(in_state(AppState::Part2)))
         .add_systems(OnExit(AppState::Part2),cleanup_room)
         .run();
 
@@ -237,6 +238,21 @@ fn move_guard(
             *sprite = Sprite::from_image(asset_server.load(guard.get_sprite()));
         }
     }
+}
+
+fn resize_trails(
+    mut commands: Commands,
+    stateinfo: Res<StateInfo>,
+    mut trailent: Query<(&TrailEntity, &mut Sprite)>,
+) {
+    for (entobj, mut sprite) in trailent.iter_mut() {
+        let custom_size = if entobj.guard_index == stateinfo.camera_target {
+            Some(Vec2::new(SCALED_CELL_SIZE/2., SCALED_CELL_SIZE/2.))
+        } else {
+            Some(Vec2::new(SCALED_CELL_SIZE/4., SCALED_CELL_SIZE/4.))
+        };
+        sprite.custom_size = custom_size;
+    };
 }
 
 //TODO: scale down unfocused guard trails
