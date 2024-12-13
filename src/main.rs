@@ -45,7 +45,7 @@ fn main() {
             update_camera,
             cleanup_non_looping,
         ).chain().run_if(in_state(AppState::Part2)))
-        .add_systems(Update,(guard_slider,resize_trails).run_if(in_state(AppState::Part2)))
+        .add_systems(Update,(guard_controls,resize_trails).run_if(in_state(AppState::Part2)))
         .add_systems(OnExit(AppState::Part2),cleanup_room)
         .run();
 }
