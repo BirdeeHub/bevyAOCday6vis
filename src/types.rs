@@ -431,3 +431,12 @@ impl Plugin for EmbeddedPlug {
 pub fn random_obstacle() -> String {
     "embedded://day6vis/sprites/Obstacle".to_string() + &(rand::random::<u8>() % 13).to_string() + ".png"
 }
+
+pub fn color_from_idx(idx: usize) -> Color {
+    Color::hsv((idx as f32 * 10. + 100.) % 360., 1., 1.)
+}
+
+#[derive(Component)]
+pub struct ToDelete(pub usize);
+#[derive(Component)]
+pub struct Obstacle(pub usize);

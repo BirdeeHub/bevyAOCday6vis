@@ -291,15 +291,6 @@ fn render_trail(
     }
 }
 
-fn color_from_idx(idx: usize) -> Color {
-    Color::hsv((idx as f32 * 10. + 100.) % 360., 1., 1.)
-}
-
-#[derive(Component)]
-struct ToDelete(usize);
-#[derive(Component)]
-struct Obstacle(usize);
-
 fn cleanup_non_looping(
     mut commands: Commands,
     non_looping: Query<(Entity, &ToDelete)>,
