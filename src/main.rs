@@ -253,7 +253,7 @@ fn render_trail(
             let custom_size = if guard.display_index == stateinfo.camera_target {
                 Some(Vec2::new(SCALED_CELL_SIZE/2., SCALED_CELL_SIZE/2.))
             } else {
-                Some(Vec2::new(SCALED_CELL_SIZE/5., SCALED_CELL_SIZE/5.))
+                Some(Vec2::new(SCALED_CELL_SIZE/4., SCALED_CELL_SIZE/4.))
             };
             let color = color_from_idx(guard.display_index);
             if guard.trail_idx == 0 && *state.get() == AppState::Part1 {
