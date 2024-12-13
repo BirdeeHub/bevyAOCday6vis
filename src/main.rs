@@ -29,7 +29,8 @@ fn main() -> Result<()> {
         .add_systems(Update,handle_calc_tasks)
         .add_systems(OnExit(AppState::InputScreen),(load_room, spawn_calc_tasks).chain())
         .add_systems(OnEnter(AppState::Part1),(room_setup, guard_spawn).chain())
-        .add_systems(Update,(prog_update_system,resize_trails,(render_trail,move_guard,update_camera).chain()).run_if(in_state(AppState::Part1)))
+        .add_systems(Update,(render_trail,move_guard,update_camera).chain().run_if(in_state(AppState::Part1)))
+        .add_systems(Update,(prog_update_system,resize_trails).run_if(in_state(AppState::Part1)))
         .add_systems(OnExit(AppState::Part1),cleanup_room)
         .add_systems(OnEnter(AppState::Part2),(room_setup, sort_guards, guard_spawn).chain())
         .add_systems(Update,(render_trail,move_guard,update_camera,cleanup_non_looping).chain().run_if(in_state(AppState::Part2)))
@@ -241,7 +242,6 @@ fn move_guard(
 }
 
 fn resize_trails(
-    mut commands: Commands,
     stateinfo: Res<StateInfo>,
     mut trailent: Query<(&TrailEntity, &mut Sprite)>,
 ) {
