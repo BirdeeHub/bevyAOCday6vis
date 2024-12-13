@@ -292,7 +292,7 @@ fn render_trail(
 }
 
 fn color_from_idx(idx: usize) -> Color {
-    Color::hsv((360- ((idx as f32 * 10.) % 360.0)), 1., 1.)
+    Color::hsv((idx as f32 * 10. + 100.) % 360., 1., 1.)
 }
 
 #[derive(Component)]
