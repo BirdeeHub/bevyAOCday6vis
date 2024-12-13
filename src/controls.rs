@@ -142,6 +142,7 @@ pub fn prog_update_system(
 pub fn guard_controls(
     mut contexts: EguiContexts,
     mut stateinfo: ResMut<StateInfo>,
+    mut timer: ResMut<MoveTimer>,
     rooms: Res<AllRooms>,
     st_but: Query<&GlobalTransform, With<StateButton>>,
 ) {
@@ -151,6 +152,12 @@ pub fn guard_controls(
     let Ok(global_transform) = st_but.get_single() else { return; };
     let newtran = global_transform.translation();
     egui::Area::new(Id::new("guard_select")).order(Order::Background).fixed_pos(Pos2::new(newtran.x, newtran.y+50.)).show(contexts.ctx_mut(), |ui| {
+        let mut newtime = timer.0.duration().as_millis() as u64;
+        ui.add(
+            egui::Slider::new(&mut newtime, 0..=750)
+                .text("Tick Rate"),
+        );
+        timer.0.set_duration(std::time::Duration::from_millis(newtime));
         ui.add(
             egui::Slider::new(&mut stateinfo.camera_target, 0..=(guards.len() - 1))
                 .text("Focused Guard"),
