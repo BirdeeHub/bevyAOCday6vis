@@ -142,6 +142,7 @@ pub fn guard_controls(
     mut contexts: EguiContexts,
     mut stateinfo: ResMut<StateInfo>,
     mut timer: ResMut<MoveTimer>,
+    state: Res<State<AppState>>,
     rooms: Res<AllRooms>,
     st_but: Query<&GlobalTransform, With<StateButton>>,
 ) {
@@ -157,10 +158,12 @@ pub fn guard_controls(
                 .text("Tick Rate"),
         );
         timer.0.set_duration(std::time::Duration::from_millis(newtime));
-        ui.add(
-            egui::Slider::new(&mut stateinfo.camera_target, 0..=(guards.len() - 1))
-                .text("Focused Guard"),
-        );
+        if *state.get() == AppState::Part2 {
+            ui.add(
+                egui::Slider::new(&mut stateinfo.camera_target, 0..=(guards.len() - 1))
+                    .text("Focused Guard"),
+            );
+        };
     });
 }
 

@@ -36,7 +36,7 @@ fn main() {
             move_guard,
             update_camera,
         ).chain().run_if(in_state(AppState::Part1)))
-        .add_systems(Update,(prog_update_system,resize_trails).run_if(in_state(AppState::Part1)))
+        .add_systems(Update,(guard_controls,prog_update_system,resize_trails).run_if(in_state(AppState::Part1)))
         .add_systems(OnExit(AppState::Part1),cleanup_room)
         .add_systems(OnEnter(AppState::Part2),(room_setup, sort_guards, guard_spawn).chain())
         .add_systems(Update,(
