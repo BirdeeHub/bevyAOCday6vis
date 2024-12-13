@@ -27,6 +27,7 @@ pub fn setup_menu(
                         // horizontally center child text
                         justify_content: JustifyContent::Center,
                         // vertically center child text
+                        flex_direction: FlexDirection::Column,
                         align_items: AlignItems::Center,
                         ..default()
                     },
@@ -42,14 +43,32 @@ pub fn setup_menu(
                         TextColor(Color::srgb(0.9, 0.9, 0.9)),
                         StateButtonText,
                     ));
-                    parent.spawn((
-                    ));
-                    parent.spawn((
-                        Sprite::from_image(asset_server.load("sprites/lock.png".to_string())),
-                    ));
+                    parent.spawn(Node {
+                        width: Val::Percent(100.0),
+                        height: Val::Px(10.0), // Progress bar height
+                        flex_direction: FlexDirection::Row,
+                        justify_content: JustifyContent::FlexStart,
+                        align_items: AlignItems::End,
+                        ..default()
+                    })
+                    .with_children(|progress_parent| {
+                        // Progress bar fill
+                        progress_parent.spawn((
+                            Node {
+                                width: Val::Percent(50.0), // Start with 50% progress
+                                height: Val::Percent(100.0),
+                                ..default()
+                            },
+                            BackgroundColor(Color::srgb(0.0, 1., 0.)), // Bar color
+                            ProgressBarFill, // Custom marker to identify the progress bar fill
+                        ));
+                    });
                 });
         });
 }
+
+#[derive(Component)]
+struct ProgressBarFill;
 
 //TODO: add a slider for speed.
 //TODO: add a slider with optional number input/display to select/see which guard to follow in part 2.
