@@ -2,7 +2,7 @@ use crate::types::*;
 use bevy::prelude::*;
 use bevy::ui::ZIndex;
 use bevy_egui::{egui, EguiContexts};
-use egui::{Order, Id};
+use egui::{Order, Id, Pos2};
 
 pub fn handle_input(
     mut contexts: EguiContexts,
@@ -143,11 +143,14 @@ pub fn guard_controls(
     mut contexts: EguiContexts,
     mut stateinfo: ResMut<StateInfo>,
     rooms: Res<AllRooms>,
+    st_but: Query<(&GlobalTransform, &Node), With<StateButton>>,
 ) {
     let Some((_, guards)) = rooms.get_room(stateinfo.room_idx) else {
         return;
     };
-    egui::Window::new("Guard Controls").show(contexts.ctx_mut(), |ui| {
+    let Ok((global_transform, node)) = st_but.get_single() else { return; };
+    let newtran = global_transform.translation();
+    egui::Area::new(Id::new("input_area")).order(Order::Background).fixed_pos(Pos2::new(newtran.x, newtran.y+50.)).show(contexts.ctx_mut(), |ui| {
         ui.add(
             egui::Slider::new(&mut stateinfo.camera_target, 0..=(guards.len() - 1))
                 .text("Focused Guard"),
