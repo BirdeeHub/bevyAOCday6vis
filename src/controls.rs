@@ -14,7 +14,11 @@ pub fn handle_input(
     err_query: Query<(Entity, &ErrorBox)>,
 ) {
     egui::Area::new(Id::new("input_area")).order(Order::Background).show(contexts.ctx_mut(), |ui| {
-        ui.text_edit_multiline(&mut pending_text.0);
+        ui.vertical(|ui| {
+            for i in 0..rooms.len() {
+                ui.radio_value(&mut stateinfo.room_idx, Some(i), i.to_string());
+            }
+        });
         ui.horizontal(|ui| {
             ui.button("New").clicked().then(|| {
                 pending_text.0.clear();
@@ -32,11 +36,7 @@ pub fn handle_input(
                 pending_text.0.clear();
             });
         });
-        ui.vertical(|ui| {
-            for i in 0..rooms.len() {
-                ui.radio_value(&mut stateinfo.room_idx, Some(i), i.to_string());
-            }
-        });
+        ui.text_edit_multiline(&mut pending_text.0);
         for (ent, err) in err_query.iter() {
             current_error.0 = err.0.clone();
             commands.entity(ent).despawn();
