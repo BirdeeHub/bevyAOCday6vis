@@ -138,7 +138,6 @@ pub fn prog_update_system(
     }
 }
 
-//TODO: add a slider for speed (changes timer tick length)
 pub fn guard_controls(
     mut contexts: EguiContexts,
     mut stateinfo: ResMut<StateInfo>,
