@@ -1,14 +1,4 @@
-use std::io::{self};
-use std::fs::File;
-use std::io::Read;
-
 use crate::types::*;
-
-pub fn read_file(file_path: &str) -> io::Result<String> {
-    let mut contents = String::new();
-    File::open(file_path)?.read_to_string(&mut contents)?;
-    Ok(contents)
-}
 
 pub fn part1(input: String) -> Result<(Room,AllGuards), RoomError> {
     let mut board = Room::from_string(input)?;
