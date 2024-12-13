@@ -1,67 +1,96 @@
 use bevy::prelude::*;
 use crate::types::*;
+use bevy_egui::{egui, EguiContexts};
+use std::env;
 
-pub fn setup_menu(mut commands: Commands) {
-    commands
-        .spawn(Node {
-            // center button
-            width: Val::Vw(100.),
-            height: Val::Vh(100.),
-            border: UiRect::axes(Val::Vw(5.), Val::Vh(5.)),
-            justify_content: JustifyContent::End,
-            align_items: AlignItems::Start,
-            ..default()
-        })
-        .with_children(|parent| {
-            parent
-                .spawn((
-                    Button,
+pub fn setup_input(
+    mut commands: Commands,
+) {
+    let args: Vec<String> = std::env::args().collect();
+    let filepath = match args.get(1) {
+        Some(filepath_arg) => filepath_arg.to_string(),
+        _ => env::var("AOC_INPUT").expect("AOC_INPUT not set")
+    };
+    let Ok(filecontents) = crate::part1and2::read_file(&filepath) else { panic!("TESTFILEFAIL AOC_INPUT NOT SET") };
+    //TODO: set up a UI for inputs here
+    commands.spawn(InputText(filecontents));
+}
+
+//TODO: make a system that handles the UI inputs and makes them into InputText
+
+//TODO: make a system that displays any existing ErrorBox entities and deletes them
+
+pub fn handle_input(
+    mut contexts: EguiContexts,
+    mut commands: Commands,
+    mut stateinfo: ResMut<StateInfo>,
+    mut pending_text: ResMut<PendingText>
+) {
+    egui::Window::new("Input Window").show(contexts.ctx_mut(), |ui| {
+        ui.text_edit_multiline(&mut pending_text.0);
+    });
+    // TODO: make selector for this
+    stateinfo.room_idx = Some(0);
+}
+
+pub fn setup_menu(
+    mut commands: Commands,
+) {
+    commands.spawn((Node {
+        // center button
+        width: Val::Vw(100.),
+        height: Val::Vh(100.),
+        border: UiRect::axes(Val::Vw(5.), Val::Vh(5.)),
+        justify_content: JustifyContent::End,
+        align_items: AlignItems::Start,
+        ..default()
+    }, MenuParent)).with_children(|parent| {
+        parent.spawn((
+            Button,
+            Node {
+                width: Val::Px(150.),
+                height: Val::Px(65.),
+                // horizontally center child text
+                justify_content: JustifyContent::Center,
+                // vertically center child text
+                flex_direction: FlexDirection::Column,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            StateButton,
+            BackgroundColor(NORMAL_BUTTON),
+        )).with_children(|parent| {
+            parent.spawn((
+                Text::new("Input"),
+                TextFont {
+                    font_size: 33.0,
+                    ..default()
+                },
+                TextColor(Color::srgb(0.9, 0.9, 0.9)),
+                StateButtonText,
+            ));
+            parent.spawn(Node {
+                width: Val::Percent(100.0),
+                height: Val::Px(10.0), // Progress bar height
+                flex_direction: FlexDirection::Row,
+                justify_content: JustifyContent::FlexStart,
+                align_items: AlignItems::End,
+                ..default()
+            }).with_children(|progress_parent| {
+                // Progress bar fill
+                progress_parent.spawn((
                     Node {
-                        width: Val::Px(150.),
-                        height: Val::Px(65.),
-                        // horizontally center child text
-                        justify_content: JustifyContent::Center,
-                        // vertically center child text
-                        flex_direction: FlexDirection::Column,
-                        align_items: AlignItems::Center,
+                        width: Val::Percent(100.0),
+                        height: Val::Percent(100.0),
                         ..default()
                     },
-                    StateButton,
-                    BackgroundColor(NORMAL_BUTTON),
-                ))
-                .with_children(|parent| {
-                    parent.spawn((
-                        Text::new("Input"),
-                        TextFont {
-                            font_size: 33.0,
-                            ..default()
-                        },
-                        TextColor(Color::srgb(0.9, 0.9, 0.9)),
-                        StateButtonText,
-                    ));
-                    parent.spawn(Node {
-                        width: Val::Percent(100.0),
-                        height: Val::Px(10.0), // Progress bar height
-                        flex_direction: FlexDirection::Row,
-                        justify_content: JustifyContent::FlexStart,
-                        align_items: AlignItems::End,
-                        ..default()
-                    })
-                    .with_children(|progress_parent| {
-                        // Progress bar fill
-                        progress_parent.spawn((
-                            Node {
-                                width: Val::Percent(100.0),
-                                height: Val::Percent(100.0),
-                                ..default()
-                            },
-                            Visibility::Hidden,
-                            BackgroundColor(Color::srgb(0.9, 0.9, 0.9)), // Bar color
-                            ProgressBarFill, // Custom marker to identify the progress bar fill
-                        ));
-                    });
-                });
+                    Visibility::Hidden,
+                    BackgroundColor(Color::srgb(0.9, 0.9, 0.9)), // Bar color
+                    ProgressBarFill, // Custom marker to identify the progress bar fill
+                ));
+            });
         });
+    });
 }
 
 pub fn prog_update_system(
@@ -88,7 +117,16 @@ pub fn prog_update_system(
 }
 
 //TODO: add a slider for speed (changes timer tick length)
-//TODO: add a slider with optional number input/display to select/see which guard to follow in part 2.
+pub fn guard_slider(
+    mut contexts: EguiContexts,
+    mut stateinfo: ResMut<StateInfo>,
+    rooms: Res<AllRooms>,
+) {
+    let Some((_, guards)) = rooms.get_room(stateinfo.room_idx) else { return; };
+    egui::Window::new("Guard Controls").show(contexts.ctx_mut(), |ui| {
+        ui.add(egui::Slider::new(&mut stateinfo.camera_target, 0..=(guards.len()-1)).text("My value"));
+    });
+}
 
 pub fn menu(
     mut next_state: ResMut<NextState<AppState>>,

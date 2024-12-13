@@ -19,6 +19,38 @@ pub const SCALED_CELL_SIZE: f32 = CELL_SIZE * SCALE_FACTOR;
 /// How quickly should the camera snap to the desired location.
 pub const CAMERA_DECAY_RATE: f32 = 2.;
 
+#[derive(Component)]
+pub struct ToDelete(pub usize);
+#[derive(Component)]
+pub struct Obstacle(pub usize);
+
+#[derive(Component)]
+pub struct ComputeTrails(pub Task<CommandQueue>);
+
+#[derive(Component)]
+pub struct ProgressBarFill;
+#[derive(Component)]
+pub struct StateButton;
+#[derive(Component)]
+pub struct StateButtonText;
+
+#[derive(Component)]
+pub struct Showbox(pub String);
+
+#[derive(Component)]
+pub struct ErrorBox(pub String);
+
+#[derive(Component)]
+pub struct RoomButton(usize);
+
+#[derive(Component)]
+pub struct InputText(pub String);
+#[derive(Resource)]
+pub struct PendingText(pub String);
+
+#[derive(Component)]
+pub struct MenuParent;
+
 #[derive(Resource, Clone, Copy, PartialEq)]
 pub struct StateInfo{
     pub room_idx: Option<usize>,
@@ -439,30 +471,3 @@ pub fn random_obstacle() -> String {
 pub fn color_from_idx(idx: usize) -> Color {
     Color::hsv((idx as f32 * 10. + 100.) % 360., 1., 1.)
 }
-
-#[derive(Component)]
-pub struct ToDelete(pub usize);
-#[derive(Component)]
-pub struct Obstacle(pub usize);
-
-#[derive(Component)]
-pub struct ComputeTrails(pub Task<CommandQueue>);
-
-#[derive(Component)]
-pub struct ProgressBarFill;
-#[derive(Component)]
-pub struct StateButton;
-#[derive(Component)]
-pub struct StateButtonText;
-
-#[derive(Component)]
-pub struct Showbox(pub String);
-
-#[derive(Component)]
-pub struct ErrorBox(pub String);
-
-#[derive(Component)]
-pub struct RoomButton(usize);
-
-#[derive(Component)]
-pub struct InputText(pub String);

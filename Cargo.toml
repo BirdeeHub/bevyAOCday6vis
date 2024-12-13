@@ -13,3 +13,4 @@ opt-level = 3
 bevy = { version = "0.15.0" }
 futures = "0.3"
 rand = "0.8.5"
+bevy_egui = "0.31"

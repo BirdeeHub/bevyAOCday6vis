@@ -3,25 +3,26 @@ mod part1and2;
 mod types;
 mod controls;
 mod camera;
-mod input;
 
 use bevy::{
     ecs::world::CommandQueue,
     prelude::*,
     tasks::{futures_lite::FutureExt, AsyncComputeTaskPool},
 };
+use bevy_egui::EguiPlugin;
 
 use crate::types::*;
 use crate::camera::*;
 use crate::controls::*;
-use crate::input::*;
 
 fn main() {
     App::new().add_plugins(DefaultPlugins)
         .add_plugins(EmbeddedPlug)
+        .add_plugins(EguiPlugin)
         .init_state::<AppState>()
         .insert_resource(AllRooms::new())
         .insert_resource(StateInfo::new())
+        .insert_resource(PendingText(String::new()))
         .insert_resource(MoveTimer(Timer::from_seconds(0.05, TimerMode::Repeating)))
         .add_systems(Startup,(setup_camera,setup_menu))
         .add_systems(Update,menu)
@@ -44,7 +45,7 @@ fn main() {
             update_camera,
             cleanup_non_looping,
         ).chain().run_if(in_state(AppState::Part2)))
-        .add_systems(Update,(resize_trails).run_if(in_state(AppState::Part2)))
+        .add_systems(Update,(guard_slider,resize_trails).run_if(in_state(AppState::Part2)))
         .add_systems(OnExit(AppState::Part2),cleanup_room)
         .run();
 }
