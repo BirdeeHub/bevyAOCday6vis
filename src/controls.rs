@@ -2,6 +2,7 @@ use crate::types::*;
 use bevy::prelude::*;
 use bevy::ui::ZIndex;
 use bevy_egui::{egui, EguiContexts};
+use egui::{Order, Id};
 
 pub fn handle_input(
     mut contexts: EguiContexts,
@@ -12,7 +13,7 @@ pub fn handle_input(
     mut current_error: ResMut<CurrentError>,
     err_query: Query<(Entity, &ErrorBox)>,
 ) {
-    egui::Window::new("Input Controls").show(contexts.ctx_mut(), |ui| {
+    egui::Area::new(Id::new("input_area")).order(Order::Background).show(contexts.ctx_mut(), |ui| {
         ui.vertical(|ui| {
             for i in 0..rooms.len() {
                 ui.radio_value(&mut stateinfo.room_idx, Some(i), i.to_string());
