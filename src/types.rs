@@ -416,7 +416,6 @@ impl Plugin for EmbeddedPlug {
         embedded_asset!(app, "sprites/Left1.png");
         embedded_asset!(app, "sprites/Left2.png");
         embedded_asset!(app, "sprites/Left3.png");
-        //embedded_asset!(app, "fonts/FiraSans-Bold.ttf");
         embedded_asset!(app, "sprites/Obstacle0.png");
         embedded_asset!(app, "sprites/Obstacle1.png");
         embedded_asset!(app, "sprites/Obstacle2.png");
