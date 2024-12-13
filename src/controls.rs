@@ -3,7 +3,10 @@ use crate::types::*;
 
 #[derive(Component)]
 pub struct StateButtonText;
-pub fn setup_menu(mut commands: Commands) {
+pub fn setup_menu(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+) {
     commands
         .spawn(Node {
             // center button
@@ -38,6 +41,11 @@ pub fn setup_menu(mut commands: Commands) {
                         },
                         TextColor(Color::srgb(0.9, 0.9, 0.9)),
                         StateButtonText,
+                    ));
+                    parent.spawn((
+                    ));
+                    parent.spawn((
+                        Sprite::from_image(asset_server.load("sprites/lock.png".to_string())),
                     ));
                 });
         });

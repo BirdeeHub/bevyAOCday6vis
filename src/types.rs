@@ -15,7 +15,7 @@ pub const SCALED_CELL_SIZE: f32 = CELL_SIZE * SCALE_FACTOR;
 /// How quickly should the camera snap to the desired location.
 pub const CAMERA_DECAY_RATE: f32 = 2.;
 
-#[derive(Resource,Clone, Copy, PartialEq)]
+#[derive(Resource, Clone, Copy, PartialEq)]
 pub struct StateInfo{
     pub room_idx: Option<usize>,
     pub camera_target: usize,
@@ -45,7 +45,7 @@ pub enum RoomSpace {
     Empty,
 }
 
-#[derive(Debug, PartialEq, Resource, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Room {
     grid: Vec<Vec<RoomSpace>>,
     initial_guard_pos: Option<(Direction,(usize,usize))>,
@@ -229,7 +229,7 @@ impl DerefMut for Trail {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Resource)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct AllGuards(pub Vec<Guard>);
 
 impl AllGuards {
