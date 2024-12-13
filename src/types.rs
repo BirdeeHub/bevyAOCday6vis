@@ -82,7 +82,8 @@ pub struct Room {
     grid: Vec<Vec<RoomSpace>>,
     initial_guard_pos: Option<(Direction,(usize,usize))>,
     pub to_check: Vec<(usize,usize)>,
-    pub visited: usize
+    pub visited: usize,
+    pub index: usize,
 }
 
 pub enum RoomError {
@@ -102,7 +103,7 @@ impl Display for RoomError {
 
 impl Room {
     pub fn new() -> Room {
-        Room{to_check: Vec::new(), grid: Vec::new(), visited:0, initial_guard_pos:None}
+        Room{to_check: Vec::new(), grid: Vec::new(), visited:0, initial_guard_pos:None, index:0}
     }
     pub fn from_string(input: String) -> Result<Room,RoomError> {
         let mut rawout:Vec<Vec<RoomSpace>> = Vec::new();
@@ -405,12 +406,18 @@ impl AllRooms {
     }
     pub fn get_room_mut(&mut self,room_idx:Option<usize>) -> Option<&mut (Room,AllGuards)> {
         if let Some(room_idx) = room_idx {
-            self.0.get_mut(room_idx)
+            for mut entry in &mut self.0 {
+                if entry.0.index == room_idx { return Some(entry); }
+            };
+            return None;
         } else { return None; }
     }
     pub fn get_room(&self,room_idx:Option<usize>) -> Option<&(Room,AllGuards)> {
         if let Some(room_idx) = room_idx {
-            self.0.get(room_idx)
+            for entry in &self.0 {
+                if entry.0.index == room_idx { return Some(entry); }
+            };
+            return None;
         } else { return None; }
     }
 }

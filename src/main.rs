@@ -57,7 +57,8 @@ pub fn load_inputs(
 ) {
     for (ent, text) in &input_text {
         match crate::part1and2::part1(text.0.clone()) {
-            Ok(new_room) => {
+            Ok(mut new_room) => {
+                new_room.0.index = rooms.0.len();
                 rooms.push(new_room);
             }
             Err(err) => {
@@ -75,7 +76,7 @@ fn spawn_calc_tasks(
     rooms: Res<AllRooms>,
 ) {
     let thread_pool = AsyncComputeTaskPool::get();
-    for (room_index, (room,guards)) in rooms.0.iter().enumerate() {
+    for (room,guards) in rooms.0.iter() {
         if StateInfo::p2_loaded(&room, &guards) { return; }
         let Some(guard1) = guards.get(0) else { return; };
         let init_is_loop = guard1.is_loop;
@@ -90,7 +91,7 @@ fn spawn_calc_tasks(
                 // we use a raw command queue to pass a FnOnce(&mut World) back to be applied in a deferred manner.
                 command_queue.push(move |world: &mut World| {
                     let Some(mut allrooms) = world.get_resource_mut::<AllRooms>() else { return; };
-                    let Some((_, ref mut guards)) = allrooms.get_room_mut(Some(room_index)) else { return; };
+                    let Some((_, ref mut guards)) = allrooms.get_room_mut(Some(room.index)) else { return; };
                     guards.push(newguard);
                 });
                 command_queue
