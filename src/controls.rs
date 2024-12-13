@@ -115,7 +115,11 @@ pub fn menu(
                 Interaction::Pressed => {
                     *color = PRESSED_BUTTON.into();
                     match state.get() {
-                        AppState::InputScreen => next_state.set(AppState::Part1),
+                        AppState::InputScreen => {
+                            if rooms.get_room(stateinfo.room_idx).is_some() {
+                                next_state.set(AppState::Part1);
+                            }
+                        },
                         AppState::Part1 => {
                             if p2loaded {
                                 next_state.set(AppState::Part2)
