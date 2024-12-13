@@ -30,7 +30,7 @@ fn main() -> Result<()> {
         .add_systems(Update,(render_trail,move_guard,crate::camera::update_camera).chain().run_if(in_state(AppState::Part1)))
         .add_systems(OnExit(AppState::Part1),(cleanup_guards, cleanup_room).chain())
         .add_systems(OnEnter(AppState::Part2),(room_setup, sort_guards, guard_spawn).chain())
-        .add_systems(Update,(render_trail,move_guard,crate::camera::update_camera).chain().run_if(in_state(AppState::Part2)))
+        .add_systems(Update,(render_trail,move_guard,crate::camera::update_camera,cleanup_non_looping).chain().run_if(in_state(AppState::Part2)))
         .add_systems(OnExit(AppState::Part2),(cleanup_guards, cleanup_room).chain())
         .run();
 
@@ -214,22 +214,24 @@ fn render_trail(
     mut commands: Commands,
     time: Res<Time>,
     mut timer: ResMut<MoveTimer>,
+    state: Res<State<AppState>>,
     mut guards: Query<&mut Guard>,
 ) {
     if timer.0.tick(time.delta()).just_finished() {
         for mut guard in guards.iter_mut() {
-            if guard.trail_idx == 0 {
+            let color = color_from_idx(guard.display_index);
+            if guard.trail_idx == 0 && *state.get() == AppState::Part1 {
                 if let Some((_,(x,y))) = guard.trail.get(0) {
                     commands.spawn((
                         Sprite {
-                            color: Color::srgb(0.0, 1.0, 0.0), // Green
+                            color, // Green
                             custom_size: Some(Vec2::new(SCALED_CELL_SIZE/2., SCALED_CELL_SIZE/2.)),
                             ..default()
                         },
                         Transform::from_translation(Vec3::new(
                             *x as f32 * SCALED_CELL_SIZE,
                             *y as f32 * -SCALED_CELL_SIZE,
-                            1.0,
+                            (guard.display_index as f32)/10.,
                         )),
                         Visibility::default(),
                         TrailEntity::new(guard.trail_idx,guard.display_index),
@@ -239,19 +241,91 @@ fn render_trail(
             if let Some((_,(x,y))) = guard.advance() {
                 commands.spawn((
                     Sprite {
-                        color: Color::srgb(0.0, 1.0, 0.0), // Green
+                        color, // Green
                         custom_size: Some(Vec2::new(SCALED_CELL_SIZE/2., SCALED_CELL_SIZE/2.)),
                         ..default()
                     },
                     Transform::from_translation(Vec3::new(
                         x as f32 * SCALED_CELL_SIZE,
                         y as f32 * -SCALED_CELL_SIZE,
-                        1.0,
+                        1.,
                     )),
                     Visibility::default(),
                     TrailEntity::new(guard.trail_idx,guard.display_index),
                 ));
+            } else if *state.get() == AppState::Part2 && !guard.is_loop {
+                commands.spawn(ToDelete(guard.display_index));
             }
+            if let Some((x,y)) = guard.obstacle {
+                if *state.get() == AppState::Part2 {
+                    commands.spawn((
+                        Sprite {
+                            color,
+                            custom_size: Some(Vec2::new(SCALED_CELL_SIZE, SCALED_CELL_SIZE/6.)), // Same size
+                            ..Default::default()
+                        },
+                        Transform {
+                            rotation: Quat::from_rotation_z(-std::f32::consts::FRAC_PI_4),
+                            translation: Vec3::new(x as f32 * SCALED_CELL_SIZE, y as f32 * -SCALED_CELL_SIZE, 1.,),
+                            ..Default::default()
+                        },
+                        Visibility::default(),
+                        Obstacle(guard.display_index),
+                    ));
+                    commands.spawn((
+                        Sprite {
+                            color,
+                            custom_size: Some(Vec2::new(SCALED_CELL_SIZE, SCALED_CELL_SIZE/6.)), // Same size
+                            ..Default::default()
+                        },
+                        Transform {
+                            rotation: Quat::from_rotation_z(std::f32::consts::FRAC_PI_4),
+                            translation: Vec3::new(x as f32 * SCALED_CELL_SIZE, y as f32 * -SCALED_CELL_SIZE, 1.,),
+                            ..Default::default()
+                        },
+                        Visibility::default(),
+                        Obstacle(guard.display_index),
+                    ));
+                }
+            }
+        }
+    }
+}
+
+fn color_from_idx(idx: usize) -> Color {
+    Color::hsv((idx as f32 * 10.) % 360.0, 1., 1.)
+}
+
+#[derive(Component)]
+struct ToDelete(usize);
+#[derive(Component)]
+struct Obstacle(usize);
+
+fn cleanup_non_looping(
+    mut commands: Commands,
+    non_looping: Query<(Entity, &ToDelete)>,
+    guards: Query<(Entity, &Guard)>,
+    trails: Query<(Entity, &TrailEntity)>,
+    obstacles: Query<(Entity, &Obstacle)>,
+) {
+    let mut to_delete = Vec::new();
+    for (entity, id) in non_looping.iter() {
+        to_delete.push(id.0);
+        commands.entity(entity).despawn_recursive();
+    }
+    for (entity, guard) in guards.iter() {
+        if to_delete.contains(&guard.display_index) {
+            commands.entity(entity).despawn_recursive();
+        }
+    }
+    for (entity, trail) in trails.iter() {
+        if to_delete.contains(&trail.guard_index) {
+            commands.entity(entity).despawn_recursive();
+        }
+    }
+    for (entity, obs) in obstacles.iter() {
+        if to_delete.contains(&obs.0) {
+            commands.entity(entity).despawn_recursive();
         }
     }
 }
@@ -262,11 +336,19 @@ fn cleanup_room(mut commands: Commands, items: Query<Entity, With<Space>>) {
     }
 }
 
-fn cleanup_guards(mut commands: Commands, guard: Query<Entity, With<Guard>>, trail: Query<Entity, With<TrailEntity>>) {
+fn cleanup_guards(
+    mut commands: Commands,
+    guard: Query<Entity, With<Guard>>,
+    trail: Query<Entity, With<TrailEntity>>,
+    obstacles: Query<Entity, With<Obstacle>>,
+) {
     for entity in guard.iter() {
         commands.entity(entity).despawn_recursive();
     }
     for entity in trail.iter() {
+        commands.entity(entity).despawn_recursive();
+    }
+    for entity in obstacles.iter() {
         commands.entity(entity).despawn_recursive();
     }
 }
