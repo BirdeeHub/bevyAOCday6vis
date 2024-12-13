@@ -58,7 +58,6 @@ fn load_room(
     let Ok(filecontents) = crate::part1and2::read_file(&filepath) else { panic!("TESTFILEFAIL AOC_INPUT NOT SET") };
 
     let Ok((board, guard1)) = crate::part1and2::part1(filecontents) else { panic!("Invalid room!!!"); };
-    println!("Part 1: total visited: {}", board.visited);
 
     let mut guards = AllGuards::new();
     guards.push(guard1.clone());
