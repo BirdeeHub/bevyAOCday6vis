@@ -14,9 +14,22 @@ pub fn handle_input(
     err_query: Query<(Entity, &ErrorBox)>,
 ) {
     egui::Window::new("Input Controls").show(contexts.ctx_mut(), |ui| {
+        ui.vertical(|ui| {
+            for (i,(room,_)) in rooms.iter().enumerate() {
+                ui.radio_value(&mut stateinfo.room_idx, Some(i), i.to_string());
+            }
+        });
         ui.horizontal(|ui| {
             ui.button("New").clicked().then(|| {
                 pending_text.0.clear();
+            });
+            ui.button("Edit").clicked().then(|| {
+                for (i,(room,_)) in rooms.iter().enumerate() {
+                    if Some(i) == stateinfo.room_idx {
+                        pending_text.0.clear();
+                        pending_text.0 = format!("{}", room);
+                    }
+                }
             });
             ui.button("Submit").clicked().then(|| {
                 commands.spawn(InputText(pending_text.0.clone()));
@@ -24,14 +37,6 @@ pub fn handle_input(
             });
         });
         ui.text_edit_multiline(&mut pending_text.0);
-        ui.vertical(|ui| {
-            for (i,(room,_)) in rooms.iter().enumerate() {
-                if ui.radio_value(&mut stateinfo.room_idx, Some(i), i.to_string()).clicked() {
-                    pending_text.0.clear();
-                    pending_text.0 = format!("{}",room);
-                }
-            }
-        });
         for (ent, err) in err_query.iter() {
             current_error.0 = err.0.clone();
             commands.entity(ent).despawn();
