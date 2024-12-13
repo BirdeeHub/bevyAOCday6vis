@@ -77,6 +77,8 @@ pub fn prog_update_system(
     mut state_button: Query<&mut BackgroundColor, With<StateButton>>,
     mut fill_bar: Query<(&mut Node, &mut Visibility), With<ProgressBarFill>>
 ) {
+    let num_tasks = tasks.iter().count();
+    println!("num_tasks {}", num_tasks);
 }
 
 //TODO: add a slider for speed.
