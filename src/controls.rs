@@ -143,14 +143,14 @@ pub fn guard_controls(
     mut contexts: EguiContexts,
     mut stateinfo: ResMut<StateInfo>,
     rooms: Res<AllRooms>,
-    st_but: Query<(&GlobalTransform, &Node), With<StateButton>>,
+    st_but: Query<&GlobalTransform, With<StateButton>>,
 ) {
     let Some((_, guards)) = rooms.get_room(stateinfo.room_idx) else {
         return;
     };
-    let Ok((global_transform, node)) = st_but.get_single() else { return; };
+    let Ok(global_transform) = st_but.get_single() else { return; };
     let newtran = global_transform.translation();
-    egui::Area::new(Id::new("input_area")).order(Order::Background).fixed_pos(Pos2::new(newtran.x, newtran.y+50.)).show(contexts.ctx_mut(), |ui| {
+    egui::Area::new(Id::new("guard_select")).order(Order::Background).fixed_pos(Pos2::new(newtran.x, newtran.y+50.)).show(contexts.ctx_mut(), |ui| {
         ui.add(
             egui::Slider::new(&mut stateinfo.camera_target, 0..=(guards.len() - 1))
                 .text("Focused Guard"),
