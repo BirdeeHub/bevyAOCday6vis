@@ -17,6 +17,8 @@ pub fn setup_input(
 
 //TODO: make a system that handles the UI inputs and makes them into InputText
 
+//TODO: make a system that displays any existing ErrorBox entities and deletes them
+
 pub fn handle_input(
     mut commands: Commands,
     mut stateinfo: ResMut<StateInfo>,
