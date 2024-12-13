@@ -19,6 +19,7 @@ pub fn part1(input: String) -> Result<(Room,Guard,usize), RoomError> {
     let mut to_check = deduplicate_vec(trail.clone().iter().map(|(_,pos)|pos.clone()).collect());
     to_check.remove(0);
     let visited = board.iter().flat_map(|row| row.iter()).filter(|&cell| cell == &RoomSpace::Visited).count();
+    board.visited = visited;
     board.to_check = to_check;
     board.reset();
     return Ok((board, Guard::new(trail.clone(),None,is_loop,0),visited));

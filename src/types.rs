@@ -54,6 +54,7 @@ pub struct Room {
     grid: Vec<Vec<RoomSpace>>,
     initial_guard_pos: Option<(Direction,(usize,usize))>,
     pub to_check: Vec<(usize,usize)>,
+    pub visited: usize
 }
 
 pub enum RoomError {
@@ -73,7 +74,7 @@ impl Display for RoomError {
 
 impl Room {
     pub fn new() -> Room {
-        Room{to_check: Vec::new(), grid: Vec::new(), initial_guard_pos:None}
+        Room{to_check: Vec::new(), grid: Vec::new(), visited:0, initial_guard_pos:None}
     }
     pub fn from_string(input: String) -> Result<Room,RoomError> {
         let mut rawout:Vec<Vec<RoomSpace>> = Vec::new();
