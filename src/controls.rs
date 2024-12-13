@@ -87,7 +87,7 @@ pub fn prog_update_system(
     };
 }
 
-//TODO: add a slider for speed.
+//TODO: add a slider for speed (changes timer tick length)
 //TODO: add a slider with optional number input/display to select/see which guard to follow in part 2.
 
 pub fn menu(
@@ -134,4 +134,3 @@ pub fn menu(
         }
     }
 }
-
