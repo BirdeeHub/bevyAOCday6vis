@@ -59,7 +59,7 @@ pub fn setup_menu(
                                 height: Val::Percent(100.0),
                                 ..default()
                             },
-                            BackgroundColor(Color::srgb(0.0, 1., 0.)), // Bar color
+                            BackgroundColor(Color::srgb(0.9, 0.9, 0.9)), // Bar color
                             ProgressBarFill, // Custom marker to identify the progress bar fill
                         ));
                     });
