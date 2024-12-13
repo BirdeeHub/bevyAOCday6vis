@@ -164,7 +164,6 @@ fn sort_guards(mut rooms: ResMut<AllRooms>) {
     }
 }
 
-//TODO: extra ghost obstacles as X in trail color
 fn guard_spawn(
     mut commands: Commands,
     rooms: Res<AllRooms>,
@@ -186,6 +185,39 @@ fn guard_spawn(
                 Visibility::default(),
                 guard.clone(),
             ));
+        }
+        let color = color_from_idx(guard.display_index);
+        if let Some((x,y)) = guard.obstacle {
+            if *state.get() == AppState::Part2 {
+                commands.spawn((
+                    Sprite {
+                        color,
+                        custom_size: Some(Vec2::new(SCALED_CELL_SIZE, SCALED_CELL_SIZE/6.)), // Same size
+                        ..Default::default()
+                    },
+                    Transform {
+                        rotation: Quat::from_rotation_z(-std::f32::consts::FRAC_PI_4),
+                        translation: Vec3::new(x as f32 * SCALED_CELL_SIZE, y as f32 * -SCALED_CELL_SIZE, 1.,),
+                        ..Default::default()
+                    },
+                    Visibility::default(),
+                    Obstacle(guard.display_index),
+                ));
+                commands.spawn((
+                    Sprite {
+                        color,
+                        custom_size: Some(Vec2::new(SCALED_CELL_SIZE, SCALED_CELL_SIZE/6.)), // Same size
+                        ..Default::default()
+                    },
+                    Transform {
+                        rotation: Quat::from_rotation_z(std::f32::consts::FRAC_PI_4),
+                        translation: Vec3::new(x as f32 * SCALED_CELL_SIZE, y as f32 * -SCALED_CELL_SIZE, 1.,),
+                        ..Default::default()
+                    },
+                    Visibility::default(),
+                    Obstacle(guard.display_index),
+                ));
+            }
         }
     }
 }
@@ -254,38 +286,6 @@ fn render_trail(
                 ));
             } else if *state.get() == AppState::Part2 && !guard.is_loop {
                 commands.spawn(ToDelete(guard.display_index));
-            }
-            if let Some((x,y)) = guard.obstacle {
-                if *state.get() == AppState::Part2 {
-                    commands.spawn((
-                        Sprite {
-                            color,
-                            custom_size: Some(Vec2::new(SCALED_CELL_SIZE, SCALED_CELL_SIZE/6.)), // Same size
-                            ..Default::default()
-                        },
-                        Transform {
-                            rotation: Quat::from_rotation_z(-std::f32::consts::FRAC_PI_4),
-                            translation: Vec3::new(x as f32 * SCALED_CELL_SIZE, y as f32 * -SCALED_CELL_SIZE, 1.,),
-                            ..Default::default()
-                        },
-                        Visibility::default(),
-                        Obstacle(guard.display_index),
-                    ));
-                    commands.spawn((
-                        Sprite {
-                            color,
-                            custom_size: Some(Vec2::new(SCALED_CELL_SIZE, SCALED_CELL_SIZE/6.)), // Same size
-                            ..Default::default()
-                        },
-                        Transform {
-                            rotation: Quat::from_rotation_z(std::f32::consts::FRAC_PI_4),
-                            translation: Vec3::new(x as f32 * SCALED_CELL_SIZE, y as f32 * -SCALED_CELL_SIZE, 1.,),
-                            ..Default::default()
-                        },
-                        Visibility::default(),
-                        Obstacle(guard.display_index),
-                    ));
-                }
             }
         }
     }
