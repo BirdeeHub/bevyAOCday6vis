@@ -68,7 +68,7 @@ pub fn setup_menu(
 }
 
 //TODO: move progress indicator for part 2 load and make the state button update correctly
-// only run in part 2
+// only run in part 1
 pub fn prog_update_system(
     mut commands: Commands,
     stateinfo: Res<StateInfo>,
