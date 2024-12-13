@@ -317,24 +317,22 @@ fn cleanup_non_looping(
     trails: Query<(Entity, &TrailEntity)>,
     obstacles: Query<(Entity, &Obstacle)>,
 ) {
-    let mut to_delete = Vec::new();
     for (entity, id) in non_looping.iter() {
-        to_delete.push(id.0);
         commands.entity(entity).despawn_recursive();
-    }
-    for (entity, guard) in guards.iter() {
-        if to_delete.contains(&guard.display_index) {
-            commands.entity(entity).despawn_recursive();
+        for (entity, guard) in guards.iter() {
+            if guard.display_index == id.0 {
+                commands.entity(entity).despawn_recursive();
+            }
         }
-    }
-    for (entity, trail) in trails.iter() {
-        if to_delete.contains(&trail.guard_index) {
-            commands.entity(entity).despawn_recursive();
+        for (entity, trail) in trails.iter() {
+            if trail.guard_index == id.0 {
+                commands.entity(entity).despawn_recursive();
+            }
         }
-    }
-    for (entity, obs) in obstacles.iter() {
-        if to_delete.contains(&obs.0) {
-            commands.entity(entity).despawn_recursive();
+        for (entity, obs) in obstacles.iter() {
+            if obs.0 == id.0 {
+                commands.entity(entity).despawn_recursive();
+            }
         }
     }
 }
