@@ -1,10 +1,7 @@
 use bevy::prelude::*;
 use crate::types::*;
 
-pub fn setup_menu(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-) {
+pub fn setup_menu(mut commands: Commands) {
     commands
         .spawn(Node {
             // center button
@@ -68,13 +65,12 @@ pub fn setup_menu(
 }
 
 pub fn prog_update_system(
-    mut commands: Commands,
     stateinfo: Res<StateInfo>,
     rooms: Res<AllRooms>,
     tasks: Query<Entity, With<ComputeTrails>>,
     mut fill_bar: Query<(&mut Node, &mut Visibility), With<ProgressBarFill>>
 ) {
-    let Some((room, guards)) = rooms.get_room(stateinfo.room_idx) else {
+    let Some((room, _)) = rooms.get_room(stateinfo.room_idx) else {
         return;
     };
     let num_tasks = tasks.iter().count() as f32;
