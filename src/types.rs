@@ -454,3 +454,15 @@ pub struct ProgressBarFill;
 pub struct StateButton;
 #[derive(Component)]
 pub struct StateButtonText;
+
+#[derive(Component)]
+pub struct Showbox(pub String);
+
+#[derive(Component)]
+pub struct ErrorBox(pub String);
+
+#[derive(Component)]
+pub struct RoomButton(usize);
+
+#[derive(Component)]
+pub struct InputText(pub String);

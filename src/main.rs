@@ -1,10 +1,9 @@
-use std::io::Result;
-use std::env;
 use std::task::{Context, Poll};
 mod part1and2;
 mod types;
 mod controls;
 mod camera;
+mod input;
 
 use bevy::{
     ecs::world::CommandQueue,
@@ -15,9 +14,9 @@ use bevy::{
 use crate::types::*;
 use crate::camera::*;
 use crate::controls::*;
+use crate::input::*;
 
-fn main() -> Result<()> {
-
+fn main() {
     App::new().add_plugins(DefaultPlugins)
         .add_plugins(EmbeddedPlug)
         .init_state::<AppState>()
@@ -27,7 +26,9 @@ fn main() -> Result<()> {
         .add_systems(Startup,(setup_camera,setup_menu))
         .add_systems(Update,menu)
         .add_systems(Update,handle_calc_tasks)
-        .add_systems(OnExit(AppState::InputScreen),(load_room, spawn_calc_tasks).chain())
+        .add_systems(OnEnter(AppState::InputScreen),setup_input)
+        .add_systems(Update,(load_inputs,handle_input).run_if(in_state(AppState::InputScreen)))
+        .add_systems(OnExit(AppState::InputScreen),(spawn_calc_tasks).chain())
         .add_systems(OnEnter(AppState::Part1),(room_setup, guard_spawn).chain())
         .add_systems(Update,(
             render_trail,
@@ -46,33 +47,26 @@ fn main() -> Result<()> {
         .add_systems(Update,(resize_trails).run_if(in_state(AppState::Part2)))
         .add_systems(OnExit(AppState::Part2),cleanup_room)
         .run();
-
-    Ok(())
 }
 
-// TODO: make an input screen, make this happen conditionally when they do that
-// give a second button to choose which input they should use by setting StateInfo.room_idx
-// and then fetch that and allguards here when input phase exits
-// should also give instructions on how to format the input
-// use Display impl for room to allow new boards based on old ones
-fn load_room(
-    mut allrooms: ResMut<AllRooms>,
-    mut stateinfo: ResMut<StateInfo>,
+pub fn load_inputs(
+    mut commands: Commands,
+    mut rooms: ResMut<AllRooms>,
+    input_text: Query<(Entity,&InputText)>,
 ) {
-    let args: Vec<String> = std::env::args().collect();
-    let filepath = match args.get(1) {
-        Some(filepath_arg) => filepath_arg.to_string(),
-        _ => env::var("AOC_INPUT").expect("AOC_INPUT not set")
-    };
-    let Ok(filecontents) = crate::part1and2::read_file(&filepath) else { panic!("TESTFILEFAIL AOC_INPUT NOT SET") };
-
-    let Ok((board, guard1)) = crate::part1and2::part1(filecontents) else { panic!("Invalid room!!!"); };
-
-    let mut guards = AllGuards::new();
-    guards.push(guard1.clone());
-
-    allrooms.push((board,guards));
-    stateinfo.room_idx = Some(0);
+    for (ent, text) in &input_text {
+        match crate::part1and2::part1(text.0.clone()) {
+            Ok(new_room) => {
+                rooms.push(new_room);
+            }
+            Err(err) => {
+                let final_msg = format!("Error: {}. Caused by input:\n{}", err, text.0.clone());
+                println!("{}", final_msg);
+                commands.spawn(ErrorBox(final_msg));
+            }
+        }
+        commands.entity(ent).despawn();
+    }
 }
 
 fn spawn_calc_tasks(

@@ -10,7 +10,7 @@ pub fn read_file(file_path: &str) -> io::Result<String> {
     Ok(contents)
 }
 
-pub fn part1(input: String) -> Result<(Room,Guard), RoomError> {
+pub fn part1(input: String) -> Result<(Room,AllGuards), RoomError> {
     let mut board = Room::from_string(input)?;
     let boardx = board.len();
     let boardy = board[0].len();
@@ -22,7 +22,9 @@ pub fn part1(input: String) -> Result<(Room,Guard), RoomError> {
     board.visited = visited;
     board.to_check = to_check;
     board.reset();
-    return Ok((board, Guard::new(trail.clone(),None,is_loop,0)));
+    let mut guards = AllGuards::new();
+    guards.push(Guard::new(trail.clone(),None,is_loop,0));
+    return Ok((board, guards));
 }
 
 pub fn part2(room: &Room, initial_path_is_loop: bool, obsx: usize, obsy: usize, index: usize) -> Guard {
