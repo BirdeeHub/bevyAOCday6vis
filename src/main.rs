@@ -245,17 +245,23 @@ fn render_trail(
     time: Res<Time>,
     mut timer: ResMut<MoveTimer>,
     state: Res<State<AppState>>,
+    stateinfo: Res<StateInfo>,
     mut guards: Query<&mut Guard>,
 ) {
     if timer.0.tick(time.delta()).just_finished() {
         for mut guard in guards.iter_mut() {
+            let custom_size = if guard.display_index == stateinfo.camera_target {
+                Some(Vec2::new(SCALED_CELL_SIZE/2., SCALED_CELL_SIZE/2.))
+            } else {
+                Some(Vec2::new(SCALED_CELL_SIZE/8., SCALED_CELL_SIZE/8.))
+            };
             let color = color_from_idx(guard.display_index);
             if guard.trail_idx == 0 && *state.get() == AppState::Part1 {
                 if let Some((_,(x,y))) = guard.trail.get(0) {
                     commands.spawn((
                         Sprite {
-                            color, // Green
-                            custom_size: Some(Vec2::new(SCALED_CELL_SIZE/2., SCALED_CELL_SIZE/2.)),
+                            color,
+                            custom_size,
                             ..default()
                         },
                         Transform::from_translation(Vec3::new(
@@ -271,8 +277,8 @@ fn render_trail(
             if let Some((_,(x,y))) = guard.advance() {
                 commands.spawn((
                     Sprite {
-                        color, // Green
-                        custom_size: Some(Vec2::new(SCALED_CELL_SIZE/2., SCALED_CELL_SIZE/2.)),
+                        color,
+                        custom_size,
                         ..default()
                     },
                     Transform::from_translation(Vec3::new(
