@@ -1,8 +1,6 @@
 use bevy::prelude::*;
 use crate::types::*;
 
-#[derive(Component)]
-pub struct StateButtonText;
 pub fn setup_menu(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -31,6 +29,7 @@ pub fn setup_menu(
                         align_items: AlignItems::Center,
                         ..default()
                     },
+                    StateButton,
                     BackgroundColor(NORMAL_BUTTON),
                 ))
                 .with_children(|parent| {
@@ -55,7 +54,7 @@ pub fn setup_menu(
                         // Progress bar fill
                         progress_parent.spawn((
                             Node {
-                                width: Val::Percent(100.0), // Start with 50% progress
+                                width: Val::Percent(100.0),
                                 height: Val::Percent(100.0),
                                 ..default()
                             },
@@ -68,12 +67,29 @@ pub fn setup_menu(
         });
 }
 
-#[derive(Component)]
-struct ProgressBarFill;
+//TODO: move progress indicator for part 2 load and make the state button update correctly
+// only run in part 2
+pub fn prog_update_system(
+    mut commands: Commands,
+    stateinfo: Res<StateInfo>,
+    rooms: Res<AllRooms>,
+    tasks: Query<Entity, With<ComputeTrails>>,
+    mut state_button: Query<&mut BackgroundColor, With<StateButton>>,
+    mut fill_bar: Query<(&mut Node, &mut Visibility), With<ProgressBarFill>>
+) {
+}
+
+pub fn prog_cleanup_system(
+    mut commands: Commands,
+    mut fill_bar: Query<&mut Visibility, With<ProgressBarFill>>
+) {
+    fill_bar.iter_mut().for_each(|mut bar|{
+        *bar = Visibility::Hidden;
+    });
+}
 
 //TODO: add a slider for speed.
 //TODO: add a slider with optional number input/display to select/see which guard to follow in part 2.
-//TODO: add a progress indicator for part 2 load and make the state button update correctly
 
 pub fn menu(
     mut next_state: ResMut<NextState<AppState>>,
@@ -81,7 +97,7 @@ pub fn menu(
     rooms: Res<AllRooms>,
     mut interaction_query: Query<
         (&Interaction, &mut BackgroundColor),
-        (Changed<Interaction>, With<Button>),
+        (Changed<Interaction>, With<Button>, With<StateButton>),
     >,
     stateinfo: Res<StateInfo>,
     mut button_text: Query<&mut Text, With<StateButtonText>>
@@ -98,7 +114,16 @@ pub fn menu(
             });
             match *interaction {
                 Interaction::Pressed => {
-                    *color = PRESSED_BUTTON.into();
+                    *color = match state.get() {
+                        AppState::Part1 => {
+                            if ! p2loaded {
+                                HOVERED_BUTTON.into()
+                            } else {
+                                PRESSED_BUTTON.into()
+                            }
+                        }
+                        _ => PRESSED_BUTTON.into(),
+                    };
                     match state.get() {
                         AppState::InputScreen => next_state.set(AppState::Part1),
                         AppState::Part1 => {
@@ -113,7 +138,16 @@ pub fn menu(
                     *color = HOVERED_BUTTON.into();
                 }
                 Interaction::None => {
-                    *color = NORMAL_BUTTON.into();
+                    *color = match state.get() {
+                        AppState::Part1 => {
+                            if ! p2loaded {
+                                HOVERED_BUTTON.into()
+                            } else {
+                                NORMAL_BUTTON.into()
+                            }
+                        }
+                        _ => NORMAL_BUTTON.into(),
+                    }
                 }
             }
         }

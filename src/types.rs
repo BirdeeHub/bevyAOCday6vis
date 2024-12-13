@@ -1,7 +1,11 @@
-use bevy::prelude::*;
-use bevy::asset::*;
 use std::ops::{Deref, DerefMut};
 use std::fmt::{Display, Formatter};
+use bevy::{
+    ecs::world::CommandQueue,
+    prelude::*,
+    asset::*,
+    tasks::Task,
+};
 
 pub const CELL_SIZE: f32 = 20.0; // Define cell size in pixels
 pub const SCALE_FACTOR: f32 = 1.0; // Scaling factor for cell size
@@ -440,3 +444,13 @@ pub fn color_from_idx(idx: usize) -> Color {
 pub struct ToDelete(pub usize);
 #[derive(Component)]
 pub struct Obstacle(pub usize);
+
+#[derive(Component)]
+pub struct ComputeTrails(pub Task<CommandQueue>);
+
+#[derive(Component)]
+pub struct ProgressBarFill;
+#[derive(Component)]
+pub struct StateButton;
+#[derive(Component)]
+pub struct StateButtonText;
