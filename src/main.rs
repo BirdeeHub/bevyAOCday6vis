@@ -57,14 +57,14 @@ fn load_room(
     };
     let Ok(filecontents) = crate::part1and2::read_file(&filepath) else { panic!("TESTFILEFAIL AOC_INPUT NOT SET") };
 
-    let Ok((board, guard1, visited)) = crate::part1and2::part1(filecontents) else { panic!("Invalid room!!!"); };
+    let Ok((board, guard1)) = crate::part1and2::part1(filecontents) else { panic!("Invalid room!!!"); };
+    println!("Part 1: total visited: {}", board.visited);
 
     let mut guards = AllGuards::new();
     guards.push(guard1.clone());
 
     allrooms.push((board,guards));
     stateinfo.room_idx = Some(0);
-    println!("Part 1: total visited: {}", visited);
 }
 
 fn spawn_calc_tasks(
@@ -193,7 +193,7 @@ fn guard_spawn(
                 commands.spawn((
                     Sprite {
                         color,
-                        custom_size: Some(Vec2::new(SCALED_CELL_SIZE, SCALED_CELL_SIZE/6.)), // Same size
+                        custom_size: Some(Vec2::new(SCALED_CELL_SIZE, SCALED_CELL_SIZE/6.)),
                         ..Default::default()
                     },
                     Transform {
@@ -207,7 +207,7 @@ fn guard_spawn(
                 commands.spawn((
                     Sprite {
                         color,
-                        custom_size: Some(Vec2::new(SCALED_CELL_SIZE, SCALED_CELL_SIZE/6.)), // Same size
+                        custom_size: Some(Vec2::new(SCALED_CELL_SIZE, SCALED_CELL_SIZE/6.)),
                         ..Default::default()
                     },
                     Transform {
