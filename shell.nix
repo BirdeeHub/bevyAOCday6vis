@@ -35,6 +35,8 @@
         hash = "sha256-1AN2E9t/lZhbXdVznhTcniy+7ZzlaEp/gwLEAucs6EA=";
         cargoHash = "sha256-DbwAh8RJtW38LJp+J9Ht8fAROK9OabaJ85D9C/Vkve4=";
       })
+      binaryen
+      wasm-tools
       wasm-pack
       cargo-edit
       alsa-lib
