@@ -2,7 +2,6 @@
 , lib
 , makeRustPlatform
 , fenix
-, writeShellScriptBin
 , pkg-config
 , alsa-lib
 , udev
