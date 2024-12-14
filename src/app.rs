@@ -76,16 +76,16 @@ fn spawn_calc_tasks(
 ) {
     let thread_pool = AsyncComputeTaskPool::get();
     for (room,guards) in rooms.0.iter() {
-        if StateInfo::p2_loaded(&room, &guards) { continue; }
-        let Some(guard1) = guards.get(0) else { continue; };
+        if StateInfo::p2_loaded(room, guards) { continue; }
+        let Some(guard1) = guards.first() else { continue; };
         let init_is_loop = guard1.is_loop;
         let to_check = room.to_check.clone();
         for (i,(x,y)) in to_check.iter().enumerate() {
-            let mut room = room.clone();
+            let room = room.clone();
             let obsx = *x;
             let obsy = *y;
             let task = thread_pool.spawn(async move {
-                let newguard = crate::part1and2::part2(&mut room, init_is_loop, obsx,obsy, i+1);
+                let newguard = crate::part1and2::part2(&room, init_is_loop, obsx,obsy, i+1);
                 let mut command_queue = CommandQueue::default();
                 // we use a raw command queue to pass a FnOnce(&mut World) back to be applied in a deferred manner.
                 command_queue.push(move |world: &mut World| {
@@ -120,6 +120,7 @@ fn room_setup(
     mut stateinfo: ResMut<StateInfo>,
     state: Res<State<AppState>>,
     asset_server: Res<AssetServer>,
+    mut loopquery: Query<&mut Visibility, With<LoopBoard>>,
 ) {
     let Some((room, _)) = rooms.get_room(stateinfo.room_idx) else { return; };
     if *state.get() == AppState::Part1 && stateinfo.camera_target != 0 {
@@ -127,6 +128,9 @@ fn room_setup(
     }
     if *state.get() == AppState::Part2 && stateinfo.camera_target == 0 {
         stateinfo.camera_target = 1;
+        for mut vis in &mut loopquery {
+            *vis = Visibility::default()
+        }
     }
     for (x, row) in room.iter().enumerate() {
         for (y, cell) in row.iter().enumerate() {
@@ -274,6 +278,7 @@ fn render_trail(
     state: Res<State<AppState>>,
     stateinfo: Res<StateInfo>,
     mut guards: Query<&mut Guard>,
+    mut loopquery: Query<(&mut Text, &mut LoopBoard)>,
 ) {
     if timer.0.tick(time.delta()).just_finished() {
         for mut guard in guards.iter_mut() {
@@ -284,7 +289,7 @@ fn render_trail(
             };
             let color = color_from_idx(guard.display_index);
             if guard.trail_idx == 0 && *state.get() == AppState::Part1 {
-                if let Some((_,(x,y))) = guard.trail.get(0) {
+                if let Some((_,(x,y))) = guard.trail.first() {
                     commands.spawn((
                         Sprite {
                             color,
@@ -316,8 +321,16 @@ fn render_trail(
                     Visibility::default(),
                     TrailEntity::new(guard.trail_idx,guard.display_index),
                 ));
-            } else if *state.get() == AppState::Part2 && !guard.is_loop {
-                commands.spawn(ToDelete(guard.display_index));
+            } else if *state.get() == AppState::Part2 {
+                if guard.is_loop && !guard.counted {
+                    guard.counted = true;
+                    for (mut looptext, mut loopboard) in loopquery.iter_mut() {
+                        loopboard.0 += 1;
+                        *looptext = Text::new(format!("Loops Found: {}", loopboard.0));
+                    }
+                } else {
+                    commands.spawn(ToDelete(guard.display_index));
+                }
             }
         }
     }
@@ -356,6 +369,7 @@ fn cleanup_room(
     guard: Query<Entity, With<Guard>>,
     trail: Query<Entity, With<TrailEntity>>,
     obstacles: Query<Entity, With<Obstacle>>,
+    mut loopquery: Query<(&mut Text, &mut LoopBoard, &mut Visibility)>,
 ) {
     for entity in items.iter() {
         commands.entity(entity).despawn_recursive();
@@ -368,5 +382,10 @@ fn cleanup_room(
     }
     for entity in obstacles.iter() {
         commands.entity(entity).despawn_recursive();
+    }
+    for (mut text,mut loopboard,mut vis) in loopquery.iter_mut() {
+        *text = Text::new("Loops Found: 0");
+        loopboard.0 = 0;
+        *vis = Visibility::Hidden;
     }
 }

@@ -10,11 +10,14 @@ use egui::{Order, Id, Pos2};
 pub fn add_examples(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
+    mut stateinfo: ResMut<StateInfo>,
 ) {
+    if stateinfo.examples_loaded { return; };
     for i in 1..=4 {
         let file = asset_server.load("embedded://day6vis/examples/input".to_string() + &i.to_string() + ".txt");
         commands.spawn(TextHandle(file));
     }
+    stateinfo.examples_loaded = true;
 }
 
 pub fn load_examples(
@@ -119,6 +122,26 @@ pub fn setup_menu(mut commands: Commands) {
         MenuParent,
     ))
     .with_children(|parent| {
+        parent.spawn((
+            Text::new("Loops Found: 0"),
+            Node {
+                padding: UiRect::all(Val::Px(5.)),
+                // horizontally center child text
+                justify_content: JustifyContent::Center,
+                // vertically center child text
+                flex_direction: FlexDirection::Column,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            TextFont {
+                font_size: 33.0,
+                ..default()
+            },
+            LoopBoard(0),
+            Visibility::Hidden,
+            TextColor(Color::srgb(0.9, 0.9, 0.9)),
+            ZIndex(99),
+        ));
         parent.spawn((
             Button,
             Node {

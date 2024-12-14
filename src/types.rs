@@ -33,6 +33,8 @@ pub struct ProgressBarFill;
 pub struct StateButton;
 #[derive(Component)]
 pub struct StateButtonText;
+#[derive(Component)]
+pub struct LoopBoard(pub u64);
 
 #[derive(Component)]
 pub struct ErrorBox(pub String);
@@ -49,12 +51,13 @@ pub struct MenuParent;
 
 #[derive(Resource, Clone, Copy, PartialEq)]
 pub struct StateInfo{
+    pub examples_loaded: bool,
     pub room_idx: Option<usize>,
     pub camera_target: usize,
 }
 impl StateInfo {
     pub fn new() -> StateInfo {
-        StateInfo{camera_target:0,room_idx:None,}
+        StateInfo{camera_target:0,room_idx:None,examples_loaded:false}
     }
     pub fn p2_loaded(room:&Room,guards:&AllGuards) -> bool {
         room.to_check.len() <= guards.0.len()
@@ -314,11 +317,12 @@ pub struct Guard {
     pub is_loop: bool,
     pub trail_idx: usize,
     pub display_index: usize,
+    pub counted: bool,
 }
 
 impl Guard {
     pub fn new(trail: Trail, obstacle: Option<(usize,usize)>, is_loop: bool, display_index: usize) -> Guard {
-        Guard { trail, obstacle, is_loop, trail_idx: 0, display_index, }
+        Guard { trail, obstacle, is_loop, trail_idx: 0, display_index,counted: false}
     }
     pub fn retreat(&mut self) -> Option<(Direction,(usize,usize))> {
         if self.trail.get(self.trail_idx).is_some() && self.trail_idx > 0 {

@@ -6,7 +6,7 @@ pub fn part1(input: String) -> Result<(Room,AllGuards), RoomError> {
     let boardy = board[0].len();
     let mut trail = Trail::new();
     let is_loop = check_for_loop(&mut board, &mut trail, false, boardx, boardy);
-    let mut to_check = deduplicate_vec(trail.clone().iter().map(|(_,pos)|pos.clone()).collect());
+    let mut to_check = deduplicate_vec(trail.clone().iter().map(|(_,pos)|*pos).collect());
     to_check.remove(0);
     let visited = board.iter().flat_map(|row| row.iter()).filter(|&cell| cell == &RoomSpace::Visited).count();
     board.visited = visited;
@@ -14,7 +14,7 @@ pub fn part1(input: String) -> Result<(Room,AllGuards), RoomError> {
     board.reset();
     let mut guards = AllGuards::new();
     guards.push(Guard::new(trail.clone(),None,is_loop,0));
-    return Ok((board, guards));
+    Ok((board, guards))
 }
 
 pub fn part2(room: &Room, initial_path_is_loop: bool, obsx: usize, obsy: usize, index: usize) -> Guard {
