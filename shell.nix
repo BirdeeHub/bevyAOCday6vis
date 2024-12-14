@@ -18,6 +18,7 @@
     nativeBuildInputs = [ pkg-config ];
     buildInputs = with pkgs; [
       fenix.packages.x86_64-linux.default.toolchain
+      wasm-pack
       cargo-edit
       alsa-lib
       udev
