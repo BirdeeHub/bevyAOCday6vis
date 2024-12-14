@@ -16,6 +16,8 @@ pub fn run() {
         .add_plugins(EmbeddedPlug)
         .add_plugins(EguiPlugin)
         .init_state::<AppState>()
+        .init_asset::<TextAsset>() // Register the custom asset type
+        .init_asset_loader::<TextAssetLoader>() // Register the custom loader
         .insert_resource(AllRooms::new())
         .insert_resource(StateInfo::new())
         .insert_resource(PendingText(String::new()))
@@ -24,7 +26,8 @@ pub fn run() {
         .add_systems(Startup,(setup_camera,setup_menu))
         .add_systems(Update,menu)
         .add_systems(Update,handle_calc_tasks)
-        .add_systems(Update,(load_inputs,handle_input).run_if(in_state(AppState::InputScreen)))
+        .add_systems(OnEnter(AppState::InputScreen),add_examples)
+        .add_systems(Update,(load_inputs,handle_input,load_examples).run_if(in_state(AppState::InputScreen)))
         .add_systems(OnExit(AppState::InputScreen),(spawn_calc_tasks).chain())
         .add_systems(OnEnter(AppState::Part1),(room_setup, guard_spawn).chain())
         .add_systems(Update,(

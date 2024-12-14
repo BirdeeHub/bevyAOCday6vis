@@ -464,6 +464,10 @@ impl Plugin for EmbeddedPlug {
         embedded_asset!(app, "sprites/Obstacle10.png");
         embedded_asset!(app, "sprites/Obstacle11.png");
         embedded_asset!(app, "sprites/Obstacle12.png");
+        embedded_asset!(app, "examples/input1.txt");
+        embedded_asset!(app, "examples/input2.txt");
+        embedded_asset!(app, "examples/input3.txt");
+        embedded_asset!(app, "examples/input4.txt");
     }
 }
 

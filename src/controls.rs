@@ -1,8 +1,67 @@
 use crate::types::*;
 use bevy::prelude::*;
 use bevy::ui::ZIndex;
+use std::io::{self};
+use bevy::asset::{AssetLoader, io::Reader, LoadContext};
+use bevy::reflect::TypePath;
 use bevy_egui::{egui, EguiContexts};
 use egui::{Order, Id, Pos2};
+
+pub fn add_examples(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+) {
+    for i in 1..=4 {
+        let file = asset_server.load("embedded://day6vis/examples/input".to_string() + &i.to_string() + ".txt");
+        commands.spawn(TextHandle(file));
+    }
+}
+
+pub fn load_examples(
+    mut commands: Commands,
+    text_assets: Res<Assets<TextAsset>>,
+    query: Query<(Entity, &TextHandle)>
+) {
+    for (ent, newtext) in query.iter() {
+        if let Some(val) = text_assets.get(&newtext.0) {
+            commands.spawn(InputText(val.0.clone()));
+            commands.entity(ent).despawn();
+        };
+    }
+}
+
+#[derive(Asset, TypePath, Debug)]
+pub struct TextAsset(pub String);
+
+#[derive(Component)]
+pub struct TextHandle(pub Handle<TextAsset>);
+
+#[derive(Default)]
+pub struct TextAssetLoader;
+
+impl AssetLoader for TextAssetLoader {
+    type Asset = TextAsset;
+    type Settings = ();
+    type Error = std::io::Error;
+    async fn load(
+        &self,
+        reader: &mut dyn Reader,
+        _settings: &(),
+        _load_context: &mut LoadContext<'_>,
+    ) -> Result<Self::Asset, Self::Error> {
+        let mut bytes = Vec::new();
+        reader.read_to_end(&mut bytes).await?;
+        // Convert bytes to String
+        if let Ok(val) = String::from_utf8(bytes) {
+            Ok(TextAsset(val))
+        } else {
+            Err(io::Error::new(io::ErrorKind::Other, "UTF-8 error"))
+        }
+    }
+    fn extensions(&self) -> &[&str] {
+        &["txt"]
+    }
+}
 
 pub fn handle_input(
     mut contexts: EguiContexts,
