@@ -11,9 +11,10 @@
 , libxcb
 , makeWrapper
 , pkgs
+, system
 , ...
 }: let
-APPDRV = (makeRustPlatform fenix.packages.x86_64-linux.default).buildRustPackage {
+APPDRV = (makeRustPlatform fenix.packages.${system}.latest).buildRustPackage {
   pname = APPNAME;
   version = "0.0.0";
   src = ./.;
