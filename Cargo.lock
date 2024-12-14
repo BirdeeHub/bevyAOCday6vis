@@ -1836,6 +1836,7 @@ dependencies = [
  "bevy_egui",
  "futures",
  "rand",
+ "wasm-bindgen",
 ]
 
 [[package]]

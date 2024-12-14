@@ -14,3 +14,7 @@ bevy = { version = "0.15.0" }
 futures = "0.3"
 rand = "0.8.5"
 bevy_egui = "0.31"
+wasm-bindgen = "0.2.99"
+
+[lib]
+crate-type = ["cdylib", "rlib"]

@@ -10,6 +10,7 @@
 , libxkbcommon
 , libX11
 , libxcb
+, makeWrapper
 , pkgs
 , ...
 }: let
@@ -17,7 +18,7 @@ APPDRV = (makeRustPlatform fenix.packages.x86_64-linux.default).buildRustPackage
   pname = APPNAME;
   version = "0.0.0";
   src = ./.;
-  nativeBuildInputs = [ pkg-config ];
+  nativeBuildInputs = [ pkg-config makeWrapper ];
   buildInputs = with pkgs; [
     alsa-lib
     udev
@@ -43,9 +44,11 @@ APPDRV = (makeRustPlatform fenix.packages.x86_64-linux.default).buildRustPackage
     lockFileContents = builtins.readFile ./Cargo.lock;
   };
 
+  postFixup = ''
+    wrapProgram "$out/bin/${APPNAME}" \
+      --prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath [ alsa-lib udev vulkan-loader libxkbcommon]}
+  '';
+
 };
 in
-writeShellScriptBin APPNAME ''
-  export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:${lib.makeLibraryPath [ alsa-lib udev vulkan-loader libxkbcommon]}"
-  exec ${APPDRV}/bin/${APPNAME} "$@"
-''
+APPDRV

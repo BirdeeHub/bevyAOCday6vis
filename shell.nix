@@ -39,8 +39,8 @@
       vulkan-loader
       vulkan-validation-layers
     ];
+    LD_LIBRARY_PATH = "${lib.makeLibraryPath (with pkgs; [ alsa-lib udev vulkan-loader libxkbcommon])}";
     shellHook = ''
-      export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:${lib.makeLibraryPath (with pkgs; [ alsa-lib udev vulkan-loader libxkbcommon])}"
       exec ${shellPkg}
     '';
   };
