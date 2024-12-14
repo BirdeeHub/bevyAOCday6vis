@@ -11,11 +11,18 @@
 , libxcb
 , makeWrapper
 , pkgs
+, system
 , ...
 }: let
 #TODO: MAKE IT BE WASM
-wasmtoolchain = with fenix.packages.x86_64-linux; combine [
-  latest
+wasmtoolchain = with fenix.packages.${system}; combine [
+  (latest.withComponents [
+    "rustc"
+    "cargo"
+    "rustfmt"
+    "clippy"
+    "rust-src"
+  ])
   targets.wasm32-unknown-unknown.latest.rust-std
 ];
 APPDRV = (makeRustPlatform fenix.packages.x86_64-linux.default).buildRustPackage {
