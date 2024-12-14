@@ -237,13 +237,13 @@ pub fn guard_controls(
         let mut newtime = timer.0.duration().as_millis() as u64;
         ui.add(
             egui::Slider::new(&mut newtime, 0..=750)
-                .text("Tick Rate"),
+                .text("Tick Rate").step_by(1.0),
         );
         timer.0.set_duration(std::time::Duration::from_millis(newtime));
         if *state.get() == AppState::Part2 {
             ui.add(
                 egui::Slider::new(&mut stateinfo.camera_target, 0..=(guards.len() - 1))
-                    .text("Focused Guard"),
+                    .text("Focused Guard").step_by(1.0),
             );
         };
     });
