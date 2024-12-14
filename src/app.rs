@@ -322,11 +322,13 @@ fn render_trail(
                     TrailEntity::new(guard.trail_idx,guard.display_index),
                 ));
             } else if *state.get() == AppState::Part2 {
-                if guard.is_loop && !guard.counted {
-                    guard.counted = true;
-                    for (mut looptext, mut loopboard) in loopquery.iter_mut() {
-                        loopboard.0 += 1;
-                        *looptext = Text::new(format!("Loops Found: {}", loopboard.0));
+                if guard.is_loop {
+                    if !guard.counted {
+                        guard.counted = true;
+                        for (mut looptext, mut loopboard) in loopquery.iter_mut() {
+                            loopboard.0 += 1;
+                            *looptext = Text::new(format!("Loops Found: {}", loopboard.0));
+                        }
                     }
                 } else {
                     commands.spawn(ToDelete(guard.display_index));
