@@ -59,8 +59,13 @@
       vulkan-loader
       vulkan-validation-layers
       (pkgs.writeShellScriptBin "build_wasm_package" ''
-        cargo build --release --target wasm32-unknown-unknown
-        wasm-bindgen --no-typescript --out-dir ./out/ --target web ./target/wasm32-unknown-unknown/release/day6vis.wasm
+        if [ -d ./out ]; then
+          rm -rf ./out/*
+          cargo build --release --target wasm32-unknown-unknown
+          wasm-bindgen --no-typescript --out-dir ./out/ --target web ./target/wasm32-unknown-unknown/release/day6vis.wasm
+          wasm-opt -Oz -o ./out/day6vis.wasm ./out/day6vis_bg.wasm
+          mv ./out/day6vis.wasm ./out/day6vis_bg.wasm
+        fi
       '')
     ];
     LD_LIBRARY_PATH = "${lib.makeLibraryPath (with pkgs; [ alsa-lib udev vulkan-loader libxkbcommon])}";
