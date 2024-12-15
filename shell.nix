@@ -61,7 +61,7 @@
       (pkgs.writeShellScriptBin "build_wasm_package" ''
         if [ -d ./out ]; then
           rm -rf ./out/*
-          cargo build --release --target wasm32-unknown-unknown
+          RUSTFLAGS="--cfg=web_sys_unstable_apis" cargo build --release --target wasm32-unknown-unknown
           wasm-bindgen --no-typescript --out-dir ./out/ --target web ./target/wasm32-unknown-unknown/release/day6vis.wasm
           wasm-opt -Oz -o ./out/day6vis.wasm ./out/day6vis_bg.wasm
           mv ./out/day6vis.wasm ./out/day6vis_bg.wasm
