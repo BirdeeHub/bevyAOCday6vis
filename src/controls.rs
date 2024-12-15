@@ -77,6 +77,7 @@ pub fn handle_input(
 ) {
     egui::Area::new(Id::new("input_area")).order(Order::Background).show(contexts.ctx_mut(), |ui| {
         ui.vertical(|ui| {
+            ui.label("Select a saved room, then click on Part 1:");
             for i in 0..rooms.len() {
                 ui.radio_value(&mut stateinfo.room_idx, Some(i), i.to_string());
             }
