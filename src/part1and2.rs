@@ -102,7 +102,7 @@ fn turn_right(direction: &Direction) -> Direction {
     }
 }
 
-pub fn deduplicate_vec<T: Eq + std::hash::Hash>(vec: Vec<T>) -> Vec<T> {
+fn deduplicate_vec<T: PartialEq>(vec: Vec<T>) -> Vec<T> {
     let mut result = Vec::new();
     for item in vec {
         if !result.contains(&item) {
